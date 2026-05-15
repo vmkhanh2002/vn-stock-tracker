@@ -1,8 +1,6 @@
 import type { OHLCVRow, IndicatorRequest, AIContextRequest, BoardRow } from "@/types"
 
-const PY_BASE =
-  process.env.NEXT_PUBLIC_PYTHON_API_URL ??
-  (typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL ?? "")
+const PY_BASE = "/api/py"
 
 async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init)
