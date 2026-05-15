@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified DateTime?
+  passwordHash  String?
+  image         String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  geminiApiKey    String?
+  geminiModel     String  @default("gemini-2.5-flash-lite")
+  defaultSource   String  @default("VCI")
+  defaultInterval String  @default("1D")
+
+  accounts    Account[]
+  watchlists  Watchlist[]
+  alerts      Alert[]
+  aiUsageLogs AIUsageLog[]
+
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Watchlist {
+  id      String   @id @default(cuid())
+  userId  String
+  symbol  String
+  note    String?
+  addedAt DateTime @default(now())
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, symbol])
+  @@index([userId])
+}
+
+model Alert {
+  id        String    @id @default(cuid())
+  userId    String
+  symbol    String
+  condition String
+  price     Float
+  active    Boolean   @default(true)
+  firedAt   DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, active])
+}
+
+model AIUsageLog {
+  id             String   @id @default(cuid())
+  userId         String
+  symbol         String?
+  mode           String
+  model          String
+  promptTokens   Int?
+  outputTokens   Int?
+  latencyMs      Int?
+  recommendation String?
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  target    String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+}

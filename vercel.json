@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/api/py/(.*)", "destination": "/api/py/index" }
+  ],
+  "functions": {
+    "api/py/index.py": { "runtime": "python3.11", "maxDuration": 30 }
+  }
+}
