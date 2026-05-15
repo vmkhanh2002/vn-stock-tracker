@@ -1,0 +1,10 @@
+.env
+.streamlit/secrets.toml
+watchlist.json
+alerts.json
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+*.md
+!README.md
