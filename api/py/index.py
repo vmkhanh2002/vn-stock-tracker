@@ -44,3 +44,23 @@ app.include_router(ai_router,    prefix="/ai-context")
 @app.get("/health")
 def health():
     return {"status": "ok", "date": str(date.today())}
+
+
+# Vercel routes /api/py/* → this file, so FastAPI receives the full path
+# e.g. /api/py/indicators. Strip /api/py prefix so FastAPI routing works.
+class _StripPrefix:
+    def __init__(self, asgi_app, prefix: str):
+        self.app = asgi_app
+        self.prefix = prefix.rstrip("/")
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket"):
+            path = scope.get("path", "")
+            if path.startswith(self.prefix):
+                stripped = path[len(self.prefix):] or "/"
+                scope = {**scope, "path": stripped,
+                         "raw_path": stripped.encode()}
+        await self.app(scope, receive, send)
+
+
+app = _StripPrefix(app, "/api/py")
