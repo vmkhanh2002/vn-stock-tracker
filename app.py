@@ -242,16 +242,26 @@ with st.sidebar:
 
     # ── API Keys ──
     with st.expander("🔑 API Keys"):
-        gemini_key = st.text_input("Gemini API Key",
-            value=os.environ.get("GEMINI_API_KEY", ""),
-            type="password", key="gemini_key_input",
-            placeholder="AIza…")
-        gemini_model = st.text_input("Gemini Model",
+        _key_loaded = bool(os.environ.get("GEMINI_API_KEY"))
+        if _key_loaded:
+            st.success("✅ Gemini API Key đã tải từ `.env`", icon="🔐")
+        else:
+            st.warning("Chưa có API Key.", icon="⚠️")
+        # KHÔNG pre-fill value với key thật — tránh lộ qua browser widget state
+        gemini_key = st.text_input(
+            "Nhập/đổi Gemini API Key",
+            value="",
+            type="password",
+            key="gemini_key_input",
+            placeholder="AIza… (để trống nếu đã có trong .env)")
+        gemini_model = st.text_input(
+            "Gemini Model",
             value=os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite"))
         if gemini_key:
             os.environ["GEMINI_API_KEY"] = gemini_key
             os.environ["GEMINI_MODEL"]   = gemini_model
-        st.caption("💡 Lưu vào file `.env` để không cần nhập lại.")
+            st.toast("✅ Đã cập nhật API Key cho phiên này.")
+        st.caption("💡 Lưu vào file `.env` để không cần nhập lại mỗi lần.")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DATA & INDICATOR HELPERS
