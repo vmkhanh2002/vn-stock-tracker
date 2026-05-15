@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQueries } from "@tanstack/react-query"
 import { Plus, Loader2, X } from "lucide-react"
 import { ReturnChart } from "@/components/charts/ReturnChart"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,14 +19,13 @@ export default function ComparePage() {
   const start = dateNDaysAgo(lookback)
   const end   = today()
 
-  const queries = symbols.map((sym) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useQuery({
+  const queries = useQueries({
+    queries: symbols.map((sym) => ({
       queryKey: ["compare", sym, start, end],
       queryFn: () => fetchIndicators({ symbol: sym, start, end }),
       staleTime: 60_000,
-    })
-  )
+    })),
+  })
 
   function addSymbol() {
     const clean = newSym.trim().toUpperCase().replace(/[^A-Z0-9]/g, "")
