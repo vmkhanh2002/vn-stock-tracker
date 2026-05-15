@@ -97,21 +97,39 @@ def compute(df: pd.DataFrame, p: IndicatorParams) -> pd.DataFrame:
     return df
 
 
+def _safe(v):
+    if isinstance(v, float) and (v != v):
+        return None
+    if hasattr(v, "item"):
+        x = v.item()
+        return None if (isinstance(x, float) and x != x) else x
+    return v
+
+
 @router.post("")
 def get_indicators(req: IndicatorRequest):
-    sym = re.sub(r"[^A-Z0-9]", "", req.symbol.strip().upper())
-    from routers.stock import fetch_history
+    import traceback
+    try:
+        sym = re.sub(r"[^A-Z0-9]", "", req.symbol.strip().upper())
+        from routers.stock import fetch_history
 
-    df = fetch_history(sym, req.start, req.end, req.source, req.interval)
-    if df.empty:
-        raise HTTPException(404, "No data found")
-    df = compute(df, req.params)
-    records = df.where(df.notna(), None).to_dict(orient="records")
-    for r in records:
-        r["time"] = str(r["time"])[:10]
-    return {
-        "symbol": sym,
-        "data": records,
-        "count": len(records),
-        "params": req.params.model_dump(),
-    }
+        df = fetch_history(sym, req.start, req.end, req.source, req.interval)
+        if df.empty:
+            raise HTTPException(404, "No data found")
+        df = compute(df, req.params)
+        records = df.to_dict(orient="records")
+        for r in records:
+            r["time"] = str(r.get("time", ""))[:10]
+            for k, v in list(r.items()):
+                if k != "time":
+                    r[k] = _safe(v)
+        return {
+            "symbol": sym,
+            "data": records,
+            "count": len(records),
+            "params": req.params.model_dump(),
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(500, f"indicators error: {exc}\n{traceback.format_exc()}")

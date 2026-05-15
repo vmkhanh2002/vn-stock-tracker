@@ -1,8 +1,12 @@
 """
-FastAPI app — deployed as Vercel Serverless Function (Python 3.11)
+FastAPI app — deployed as Vercel Serverless Function
 All routes are prefixed /api/py/ by vercel.json rewrites
 """
 import os
+os.environ.setdefault("HOME", "/tmp")
+os.environ.setdefault("TMPDIR", "/tmp")
+os.makedirs("/tmp/.vnstock", exist_ok=True)
+
 import warnings
 from datetime import date
 

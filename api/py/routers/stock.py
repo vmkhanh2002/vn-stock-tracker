@@ -1,7 +1,7 @@
 """
 GET /api/py/stock/history   → OHLCV history
 GET /api/py/stock/realtime  → latest quote
-POST /api/py/stock/board    → batch latest quotes
+POST /api/py/stock/board    → batch real-time board via Trading.price_board()
 """
 import re
 from datetime import date
@@ -29,7 +29,6 @@ def to_vnd(series: pd.Series) -> pd.Series:
 def fetch_history(symbol: str, start: str, end: str, source: str, interval: str) -> pd.DataFrame:
     try:
         from vnstock import Quote
-
         df = Quote(symbol=symbol, source=source).history(
             start=start, end=end, interval=interval
         )
@@ -82,37 +81,109 @@ class BoardRequest(BaseModel):
     @field_validator("symbols")
     @classmethod
     def validate_syms(cls, v):
-        if len(v) > 30:
-            raise ValueError("Max 30 symbols per request")
-        return [re.sub(r"[^A-Z0-9]", "", s.strip().upper()) for s in v if s.strip()]
+        cleaned = [re.sub(r"[^A-Z0-9]", "", s.strip().upper()) for s in v if s.strip()]
+        if len(cleaned) > 50:
+            raise ValueError("Max 50 symbols per request")
+        return cleaned
+
+
+def _safe_float(val, default: float = 0.0) -> float:
+    try:
+        f = float(val)
+        return f if f == f else default  # NaN check
+    except (TypeError, ValueError):
+        return default
+
+
+@router.get("/board-debug")
+def board_debug(source: str = "KBS"):
+    try:
+        from vnstock import Trading
+        trading = Trading(source=source, symbol="VNM")
+        df = trading.price_board(symbols_list=["VNM", "VCB"])
+        df.columns = [str(c).lower().replace(" ", "_") for c in df.columns]
+        return {
+            "columns": list(df.columns),
+            "sample": df.head(1).to_dict(orient="records"),
+        }
+    except Exception as exc:
+        import traceback
+        return {"error": str(exc), "trace": traceback.format_exc()}
 
 
 @router.post("/board")
 def get_board(req: BoardRequest):
+    import traceback
     today = str(date.today())
-    result = []
-    for sym in req.symbols:
-        try:
-            df = fetch_history(sym, today, today, req.source, "1D")
-            if df.empty:
+
+    try:
+        from vnstock import Trading
+
+        trading = Trading(source=req.source, symbol=req.symbols[0])
+        df = trading.price_board(symbols_list=req.symbols)
+
+        if df is None or df.empty:
+            raise HTTPException(502, "price_board returned empty data")
+
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = [
+                "_".join(str(x) for x in col).lower()
+                for col in df.columns.values
+            ]
+        else:
+            df.columns = [str(c).lower().replace(" ", "_") for c in df.columns]
+
+        records = df.to_dict(orient="records")
+        result = []
+
+        for row in records:
+            sym = str(
+                row.get("symbol") or row.get("listing_symbol", "")
+            ).strip().upper()
+            if not sym:
                 continue
-            last = df.iloc[-1]
-            open_ = float(last.get("open", 0) or 0)
-            close = float(last.get("close", 0) or 0)
-            change = close - open_
-            change_pct = (change / open_ * 100) if open_ else 0.0
-            result.append(
-                {
-                    "symbol": sym,
-                    "open": open_,
-                    "high": float(last.get("high", 0) or 0),
-                    "low": float(last.get("low", 0) or 0),
-                    "close": close,
-                    "volume": float(last.get("volume", 0) or 0),
-                    "change": round(change, 2),
-                    "changePct": round(change_pct, 2),
-                }
-            )
-        except Exception:
-            pass
-    return {"date": today, "data": result}
+
+            if req.source == "KBS":
+                open_ = _safe_float(row.get("open_price") or row.get("reference_price"))
+                high  = _safe_float(row.get("high_price"))
+                low   = _safe_float(row.get("low_price"))
+                close = _safe_float(row.get("close_price") or row.get("match_price"))
+                vol   = _safe_float(row.get("volume_accumulated") or row.get("volume_last"))
+                change     = _safe_float(row.get("price_change"))
+                change_pct = round(_safe_float(row.get("percent_change")), 2)
+            else:
+                open_ = _safe_float(
+                    row.get("listing_ref_price") or row.get("match_open_price")
+                )
+                high  = _safe_float(row.get("match_highest"))
+                low   = _safe_float(row.get("match_lowest"))
+                close = _safe_float(row.get("match_match_price"))
+                vol   = _safe_float(
+                    row.get("match_accumulated_volume") or row.get("match_match_vol")
+                )
+                change     = close - open_
+                change_pct = round((change / open_ * 100) if open_ else 0.0, 2)
+
+            if 0 < close < 10_000:
+                open_ *= 1000; high *= 1000; low *= 1000; close *= 1000
+                change = close - open_
+                change_pct = round((change / open_ * 100) if open_ else 0.0, 2)
+
+            result.append({
+                "symbol":    sym,
+                "open":      open_,
+                "high":      high,
+                "low":       low,
+                "close":     close,
+                "volume":    vol,
+                "change":    round(change, 2),
+                "changePct": change_pct,
+            })
+
+        result.sort(key=lambda r: r["symbol"])
+        return {"date": today, "data": result}
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(502, f"board error: {exc}\n{traceback.format_exc()}")
