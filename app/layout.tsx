@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { AuthProvider } from "@/components/providers/AuthProvider"
 import { TRPCProvider } from "@/components/providers/TRPCProvider"
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: "VN Stock Tracker",
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <TRPCProvider>{children}</TRPCProvider>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   )
