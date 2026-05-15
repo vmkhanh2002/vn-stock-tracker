@@ -11,7 +11,7 @@ import { formatVND, formatVolume, formatPct, changeColor } from "@/lib/utils"
 const VN30 = [
   "ACB","BCM","BID","BVH","CTG","FPT","GAS","GVR","HDB","HPG",
   "MBB","MSN","MWG","PLX","POW","SAB","SHB","SSI","STB","TCB",
-  "TPB","VCB","VHM","VIB","VIC","VJC","VNM","VPB","VRE","VTC",
+  "TPB","VCB","VHM","VIB","VIC","VJC","VNM","VPB","VRE","VND",
 ]
 
 export default function RealtimePage() {

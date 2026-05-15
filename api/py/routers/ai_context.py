@@ -54,12 +54,14 @@ def build_context(df: pd.DataFrame, symbol: str) -> str:
     tbl  = df[[c for c in cols if c in df.columns]].tail(30)
     rows = []
     for _, r in tbl.sort_values("time", ascending=False).iterrows():
-        rsi_val  = r.get("rsi", float("nan"))
-        macdh    = r.get("macdHist", float("nan"))
+        rsi_val  = float(r["rsi"])  if ("rsi" in r.index and r["rsi"] == r["rsi"]) else float("nan")
+        macdh    = float(r["macdHist"]) if ("macdHist" in r.index and r["macdHist"] == r["macdHist"]) else float("nan")
+        rsi_s    = f"{rsi_val:.1f}" if rsi_val == rsi_val else "—"
+        macdh_s  = f"{macdh:.2f}" if macdh == macdh else "—"
         rows.append(
             f"{str(r['time'])[:10]} | {r['close']:,.0f} | "
             f"O:{r['open']:,.0f} H:{r['high']:,.0f} L:{r['low']:,.0f} | "
-            f"Vol:{r['volume']:,.0f} | RSI:{rsi_val:.1f} | MACD-H:{macdh:.2f}"
+            f"Vol:{r['volume']:,.0f} | RSI:{rsi_s} | MACD-H:{macdh_s}"
         )
     table_str = "\n".join(rows)
 

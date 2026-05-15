@@ -2,14 +2,13 @@
 import { useState } from "react"
 import { Loader2, ChevronLeft, ChevronRight, Download } from "lucide-react"
 import { trpc } from "@/lib/trpc/client"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 
 const recStyle: Record<string, string> = {
-  MUA: "success",
-  BAN: "danger",
-  GIU: "warning",
+  MUA: "bg-green-100 text-green-700 border-green-200",
+  BAN: "bg-red-100 text-red-700 border-red-200",
+  GIU: "bg-amber-100 text-amber-700 border-amber-200",
 }
 const recLabel: Record<string, string> = { MUA: "MUA", BAN: "BÁN", GIU: "GIỮ" }
 
@@ -77,9 +76,9 @@ export default function AdminLogsPage() {
                   <td className="py-1.5 px-2 text-right">{log.latencyMs ? `${log.latencyMs}ms` : "—"}</td>
                   <td className="py-1.5 px-2">
                     {log.recommendation ? (
-                      <Badge variant={recStyle[log.recommendation] as any} className="text-xs">
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold ${recStyle[log.recommendation] ?? ""}`}>
                         {recLabel[log.recommendation] ?? log.recommendation}
-                      </Badge>
+                      </span>
                     ) : "—"}
                   </td>
                   <td className="py-1.5 px-2 text-slate-400">

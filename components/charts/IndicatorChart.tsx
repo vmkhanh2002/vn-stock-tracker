@@ -1,9 +1,9 @@
 "use client"
 import {
   ResponsiveContainer,
+  ComposedChart,
   LineChart,
   Line,
-  BarChart,
   Bar,
   XAxis,
   YAxis,
@@ -44,23 +44,16 @@ export function IndicatorChart({ data, type, height = 160 }: Props) {
   if (type === "macd") {
     return (
       <ResponsiveContainer width="100%" height={height}>
-        <BarChart data={slim} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+        <ComposedChart data={slim} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
           <XAxis dataKey="time" hide />
           <YAxis width={40} tick={{ fontSize: 10 }} />
           <Tooltip formatter={(v: number) => v?.toFixed(2)} contentStyle={{ fontSize: 11 }} />
           <ReferenceLine y={0} stroke="#94a3b8" />
-          <Bar
-            dataKey="macdHist"
-            name="Histogram"
-            fill="#94a3b8"
-            radius={[1, 1, 0, 0]}
-            // color by value
-            label={false}
-          />
+          <Bar dataKey="macdHist" name="Histogram" fill="#94a3b8" radius={[1, 1, 0, 0]} label={false} />
           <Line type="monotone" dataKey="macd" stroke="#2563eb" dot={false} strokeWidth={1.5} name="MACD" />
           <Line type="monotone" dataKey="macdSig" stroke="#f59e0b" dot={false} strokeWidth={1.5} name="Signal" />
-        </BarChart>
+        </ComposedChart>
       </ResponsiveContainer>
     )
   }
