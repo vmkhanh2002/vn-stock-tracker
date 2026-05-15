@@ -25,3 +25,8 @@ alerts.json
 
 # ── Keep README ───────────────────────────────────────────────────────────
 !README.md
+
+.vercel
+.env*.local
+
+python-api/
