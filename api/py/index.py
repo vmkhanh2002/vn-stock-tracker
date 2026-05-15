@@ -3,9 +3,11 @@ FastAPI app — deployed as Vercel Serverless Function
 All routes are prefixed /api/py/ by vercel.json rewrites
 """
 import os
+import sys
 os.environ.setdefault("HOME", "/tmp")
 os.environ.setdefault("TMPDIR", "/tmp")
 os.makedirs("/tmp/.vnstock", exist_ok=True)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import warnings
 from datetime import date
