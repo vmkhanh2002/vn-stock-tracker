@@ -218,11 +218,38 @@ def clean_nan(val):
         return None
     return val
 
+def ensure_schema(data_list: List[dict]) -> List[dict]:
+    defaults = {
+        'symbol': '',
+        'organ_name': '',
+        'price': 0.0,
+        'pct_change': 0.0,
+        'volume': 0.0,
+        'foreign_buy': 0.0,
+        'foreign_sell': 0.0,
+        'foreign_net': 0.0,
+        'exchange': '',
+        'pe': None,
+        'pb': None,
+        'roe': None,
+        'roa': None,
+        'debt_to_equity': None,
+        'debt_to_assets': None,
+        'rev_growth': None,
+        'profit_growth': None
+    }
+    res = []
+    for item in data_list:
+        new_item = defaults.copy()
+        new_item.update(item)
+        res.append(new_item)
+    return res
+
 def get_base_data(group: str) -> List[dict]:
     # 1. Thử đọc từ cache của Turso Cloud trước
     turso_cache = get_screener_cache_from_turso(group)
     if turso_cache is not None:
-        return clean_nan(turso_cache)
+        return ensure_schema(clean_nan(turso_cache))
 
     # 2. Fallback: Đọc từ cache tệp cục bộ /tmp
     cache_path = get_cache_path(group)
@@ -233,7 +260,7 @@ def get_base_data(group: str) -> List[dict]:
             mtime = os.path.getmtime(cache_path)
             if now - mtime < CACHE_TTL:
                 with open(cache_path, "r", encoding="utf-8") as f:
-                    return clean_nan(json.load(f))
+                    return ensure_schema(clean_nan(json.load(f)))
         except Exception:
             pass
             
@@ -351,33 +378,39 @@ def run_screener(req: ScreenerRequest):
     filtered = []
     for r in data:
         # 1. Lọc PE
-        if req.peMin is not None and (r['pe'] is None or r['pe'] < req.peMin):
+        pe = r.get('pe')
+        if req.peMin is not None and (pe is None or pe < req.peMin):
             continue
-        if req.peMax is not None and (r['pe'] is None or r['pe'] > req.peMax):
+        if req.peMax is not None and (pe is None or pe > req.peMax):
             continue
             
         # 2. Lọc PB
-        if req.pbMin is not None and (r['pb'] is None or r['pb'] < req.pbMin):
+        pb = r.get('pb')
+        if req.pbMin is not None and (pb is None or pb < req.pbMin):
             continue
-        if req.pbMax is not None and (r['pb'] is None or r['pb'] > req.pbMax):
+        if req.pbMax is not None and (pb is None or pb > req.pbMax):
             continue
             
         # 3. Lọc ROE
-        if req.roeMin is not None and (r['roe'] is None or r['roe'] < req.roeMin):
+        roe = r.get('roe')
+        if req.roeMin is not None and (roe is None or roe < req.roeMin):
             continue
             
         # 4. Lọc ROA
-        if req.roaMin is not None and (r['roa'] is None or r['roa'] < req.roaMin):
+        roa = r.get('roa')
+        if req.roaMin is not None and (roa is None or roa < req.roaMin):
             continue
             
         # 5. Lọc % thay đổi giá
-        if req.pctChangeMin is not None and r['pct_change'] < req.pctChangeMin:
+        pct_change = r.get('pct_change', 0.0) or 0.0
+        if req.pctChangeMin is not None and pct_change < req.pctChangeMin:
             continue
-        if req.pctChangeMax is not None and r['pct_change'] > req.pctChangeMax:
+        if req.pctChangeMax is not None and pct_change > req.pctChangeMax:
             continue
             
         # 6. Lọc khối lượng
-        if req.volumeMin is not None and r['volume'] < req.volumeMin:
+        volume = r.get('volume', 0.0) or 0.0
+        if req.volumeMin is not None and volume < req.volumeMin:
             continue
             
         filtered.append(r)
