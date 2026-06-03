@@ -1,0 +1,13 @@
+node_modules
+.next
+venv
+.git
+.claude
+.vercel
+.gemini
+*.bak
+*.bak*
+*.log
+Dockerfile.bak
+docker-compose.yml.bak
+postgres_data

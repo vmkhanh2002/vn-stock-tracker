@@ -45,7 +45,7 @@ vnstock library               ← Dữ liệu thị trường VN (user key)
 
 ---
 
-## 🔑 Cấu hình per-user (không hardcode)
+## 🔑 Cấu hình per-user 
 
 | Setting | Mô tả |
 |---|---|

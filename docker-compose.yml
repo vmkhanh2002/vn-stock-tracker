@@ -62,7 +62,10 @@ services:
 
   # ── DB Migration (chạy 1 lần khi start) ────────────────────────────────
   migrate:
-    image: node:20-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
     container_name: vnstock_migrate
     depends_on:
       db:
@@ -70,10 +73,6 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-vnstock}:${POSTGRES_PASSWORD:-vnstock_secret}@db:5432/${POSTGRES_DB:-vnstock_tracker}
     working_dir: /app
-    volumes:
-      - ./prisma:/app/prisma
-      - ./node_modules:/app/node_modules
-      - ./package.json:/app/package.json
     command: >
       sh -c "npx prisma db push --skip-generate"
     restart: "no"
