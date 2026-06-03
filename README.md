@@ -40,6 +40,7 @@ FastAPI (Vercel Serverless)   ← Python data layer
     └── /ai-context           ← Build markdown context cho AI
 
 PostgreSQL (Prisma)           ← User data, settings, logs
+Turso SQLite (Edge Cache)     ← Bộ đệm đám mây lưu trữ dữ liệu Screener & Ratios
 OpenRouter API                ← LLM gateway (user key)
 vnstock library               ← Dữ liệu thị trường VN (user key)
 ```
@@ -212,6 +213,8 @@ npx prisma db push   # tạo bảng theo schema
 | `DATABASE_URL` | ✅ | PostgreSQL connection string |
 | `NEXTAUTH_SECRET` | ✅ | Secret key cho NextAuth session |
 | `NEXTAUTH_URL` | ✅ | URL public của app (vd: https://...) |
+| `TURSO_DATABASE_URL` | ❌ (Tùy chọn) | URL kết nối Turso Database (ví dụ: `libsql://...`). Được dùng làm Edge Cache lưu trữ dữ liệu Screener & Ratios. Nếu bỏ trống, hệ thống tự động fallback dùng cache cục bộ `/tmp` |
+| `TURSO_AUTH_TOKEN` | ❌ (Tùy chọn) | JWT Token xác thực kết nối của cơ sở dữ liệu Turso |
 
 > `VNSTOCK_API_KEY` và `OPENROUTER_API_KEY` **không** set ở cấp hệ thống — mỗi user tự nhập trong Settings.
 
