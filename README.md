@@ -1,136 +1,136 @@
 # VN Stock Tracker
 
-Nền tảng phân tích cổ phiếu Việt Nam tích hợp AI, xây dựng bằng **Next.js 16 + FastAPI + vnstock**.  
-Mỗi user tự quản lý API key cá nhân — không bottleneck, không hardcode.
+A Vietnamese stock analysis platform integrated with AI, built using **Next.js 16 + FastAPI + vnstock**.  
+Each user manages their own personal API keys — no bandwidth bottlenecks, no hardcoded keys.
 
-**Live:** https://vn-stock-tracker-swart.vercel.app
+**Live Demo:** https://vn-stock-tracker-swart.vercel.app
 
 ---
 
-## Tính năng
+## Features
 
-| Module | Nội dung |
+| Module | Description |
 |---|---|
-| **Tra cứu 1 mã** | OHLCV, biểu đồ nến, MA10/20/50, Bollinger Bands, tín hiệu kỹ thuật tự động |
-| **Bảng giá thời gian thực** | Nhiều mã cùng lúc + so sánh tỷ suất tích lũy |
-| **Bộ lọc cổ phiếu** | Quét & lọc mã theo sàn, rổ chỉ số kèm chỉ số FA (P/E, P/B, ROE) và biến động kỹ thuật realtime |
-| **AI Khuyến nghị** | GPT phân tích TA + FA theo khung đầu tư (ngắn/trung/dài hạn) |
-| **Chỉ số cơ bản (FA)** | EPS, P/E, P/B, ROE, ROA, Debt/Equity, tăng trưởng YoY |
-| **Dòng tiền khối ngoại** | Mua/bán ròng theo phiên gần nhất |
-| **Watchlist & Alert** | Danh sách theo dõi, cảnh báo giá qua email |
-| **So sánh nhiều mã** | Biểu đồ tỷ suất sinh lời tích lũy |
-| **Admin Panel** | Quản lý user, xem AI usage logs |
+| **Stock Lookup** | OHLCV candlesticks, MA10/20/50, Bollinger Bands, automatic technical analysis signals |
+| **Real-time Price Board** | View multiple symbols simultaneously + compare cumulative returns |
+| **Stock Screener** | Scan & filter stocks across the VN market using FA metrics (P/E, P/B, ROE, ROA) and real-time price change/volume |
+| **AI Advisor** | AI recommendations analyzing both TA + FA based on investment horizon (short/medium/long-term) and risk appetite |
+| **Fundamental Analysis (FA)** | EPS, P/E, P/B, ROE, ROA, Debt/Equity, YoY growth |
+| **Foreign Investment Flow** | Net buy/sell volume and value of the latest session |
+| **Watchlist & Alerts** | Watchlist management and price alerts sent via email |
+| **Stock Comparison** | Interactive cumulative return comparison chart |
+| **Admin Panel** | User management and AI usage logs audit |
 
 ---
 
-## Kiến trúc
+## Architecture
 
 ```
 User Browser
     │
     ▼
 Next.js 16 (Vercel)          ← Frontend + API Routes
-    ├── /api/ai/analyze       ← Gọi OpenRouter AI
-    ├── /api/trpc/[trpc]      ← tRPC: user settings, watchlist, alert
-    └── /api/py/*             ← Proxy đến FastAPI
+    ├── /api/ai/analyze       ← Call OpenRouter AI
+    ├── /api/trpc/[trpc]      ← tRPC: user settings, watchlist, alerts
+    └── /api/py/*             ← Proxy to FastAPI
 
 FastAPI (Vercel Serverless)   ← Python data layer
-    ├── /stock                ← Giá OHLCV, screener
+    ├── /stock                ← OHLCV prices, screener
     ├── /indicators           ← RSI, MACD, Bollinger, ADX...
     └── /ai-context           ← Build markdown context cho AI
 
 PostgreSQL (Prisma)           ← User data, settings, logs
-Turso SQLite (Edge Cache)     ← Bộ đệm đám mây lưu trữ dữ liệu Screener & Ratios
+Turso SQLite (Edge Cache)     ← Cloud cache for Screener & Ratios data
 OpenRouter API                ← LLM gateway (user key)
-vnstock library               ← Dữ liệu thị trường VN (user key)
+vnstock library               ← VN market data retrieval (user key)
 ```
 
 ---
 
-## Cấu hình per-user 
+## Per-user Configuration
 
-| Setting | Mô tả |
+| Setting | Description |
 |---|---|
-| **OpenRouter API Key** | Key cá nhân để gọi AI model — lấy tại [openrouter.ai](https://openrouter.ai) |
-| **OpenRouter Model** | Tên model tuỳ chọn (ví dụ: `openrouter/owl-alpha`, `google/gemini-2.5-pro`) |
-| **Vnstock API Key** | Key cá nhân vnstock — lấy tại [vnstocks.com](https://vnstocks.com) (miễn phí) |
-| **AI System Prompt** | Tuỳ chỉnh vai trò AI. Để trống = dùng prompt mặc định. Hỗ trợ `{horizon}` và `{risk}` |
-| **Nguồn dữ liệu** | VCI hoặc KBS |
-| **Khung thời gian** | 1D / 1W / 1M |
+| **OpenRouter API Key** | Personal key to call AI models — obtain at [openrouter.ai](https://openrouter.ai) |
+| **OpenRouter Model** | Custom model name (e.g., `openrouter/owl-alpha`, `google/gemini-2.5-pro`) |
+| **Vnstock API Key** | Personal vnstock API key — obtain at [vnstocks.com](https://vnstocks.com) (free tier) |
+| **AI System Prompt** | Customize AI behavior. Leave blank to use system default. Supports `{horizon}` and `{risk}` placeholders |
+| **Default Data Source** | VCI or KBS |
+| **Default Interval** | 1D / 1W / 1M |
 
-> **Vnstock API Key là bắt buộc** — mọi request không có key sẽ bị từ chối (401).
+> **Vnstock API Key is required** — all requests without a key will be rejected (401).
 
 ---
 
 ## AI System Prompt
 
-Prompt AI được load theo thứ tự ưu tiên:
+The system loads the AI system prompt in the following order:
 
-1. **Custom prompt** của user (nhập trong Settings)
+1. **Custom prompt** entered by the user (configured in Settings)
 2. **Fallback:** `lib/default-system-prompt.txt`
 
-Prompt hỗ trợ placeholder động:
-- `{horizon}` — khung đầu tư (ngắn hạn / trung hạn / dài hạn)
-- `{risk}` — khẩu vị rủi ro (thấp / trung bình / cao)
+The prompt supports dynamic placeholders:
+- `{horizon}` — investment horizon (short-term / medium-term / long-term)
+- `{risk}` — risk appetite (low / medium / high)
 
-**Quy tắc phân tích theo khung đầu tư:**
-- **Ngắn hạn (1-5 phiên):** 70% TA (RSI, MACD, Bollinger, Stochastic, ADX) + 30% FA
-- **Trung/Dài hạn (>3 tháng):** Ưu tiên FA sâu (ROE, P/E, tăng trưởng YoY, đòn bẩy)
+**Analysis Rules by Horizon:**
+- **Short-term (1-5 sessions):** 70% TA (RSI, MACD, Bollinger, Stochastic, ADX) + 30% FA (avoid penny stock trap)
+- **Medium/Long-term (>3 months):** Prioritize deep FA (ROE, P/E, YoY growth, leverage)
 
 ---
 
-## Self-host với Docker (khuyến nghị)
+## Self-hosting with Docker (Recommended)
 
-Cách đơn giản nhất để chạy trên máy hoặc VPS cá nhân — không cần cài Node, Python, hay PostgreSQL riêng lẻ.
+The easiest way to run the platform on your local machine or VPS — no need to install Node, Python, or PostgreSQL manually.
 
-### Kiến trúc Docker
+### Docker Services
 
 ```
 docker-compose.yml
 ├── db        (PostgreSQL 16)      — port 5432
 ├── api       (FastAPI / uvicorn)  — port 8000
 ├── web       (Next.js standalone) — port 3000
-└── migrate   (prisma db push)     — chạy 1 lần khi start
+└── migrate   (prisma db push)     — runs once at startup
 ```
 
-### Cài đặt
+### Setup Instructions
 
-**Yêu cầu:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac) hoặc Docker Engine (Linux)
+**Requirements:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac) or Docker Engine (Linux)
 
 ```bash
-# 1. Clone repo
+# 1. Clone the repository
 git clone https://github.com/vmkhanh2002/vn-stock-tracker.git
 cd vn-stock-tracker
 
-# 2. Tạo file env
+# 2. Create env file
 cp .env.docker .env.docker.local
-# → Mở .env.docker.local và đổi POSTGRES_PASSWORD, NEXTAUTH_SECRET
+# → Open .env.docker.local and modify POSTGRES_PASSWORD and NEXTAUTH_SECRET
 
-# 3. Build và chạy
+# 3. Build and run
 docker compose --env-file .env.docker.local up -d --build
 
-# 4. Kiểm tra trạng thái
+# 4. Check status
 docker compose ps
 ```
 
-Truy cập: **http://localhost:3000**
+Access the app at: **http://localhost:3000**
 
-> **Lưu ý về build tự động:** Quá trình build hoàn toàn tự đóng gói (self-contained). Bạn không cần chạy `npm install` hay `pip install` ở máy local trước khi chạy Docker Compose. Dịch vụ `migrate` sẽ sử dụng container builder để chạy prisma migration mà không phụ thuộc vào `node_modules` ở máy host.
+> **Note on automated build:** The build process is fully self-contained. You do not need to run `npm install` or `pip install` on your local host. The `migrate` service uses the builder container to run prisma migration automatically.
 
-### Lần chạy sau (không cần build lại)
+### Running Later (No rebuild needed)
 
 ```bash
 docker compose --env-file .env.docker.local up -d
 ```
 
-### Dừng / Xóa
+### Stop / Clean Up
 
 ```bash
-docker compose down          # dừng, giữ data
-docker compose down -v       # dừng + xóa DB data
+docker compose down          # stop, keep DB data
+docker compose down -v       # stop + delete DB data volumes
 ```
 
-### Xem logs
+### View Logs
 
 ```bash
 docker compose logs -f web   # Next.js logs
@@ -138,7 +138,7 @@ docker compose logs -f api   # FastAPI logs
 docker compose logs -f db    # PostgreSQL logs
 ```
 
-### Cập nhật lên version mới
+### Update to Latest Version
 
 ```bash
 git pull
@@ -147,47 +147,47 @@ docker compose --env-file .env.docker.local up -d --build
 
 ---
 
-## Cài đặt local (không Docker)
+## Local Development (No Docker)
 
 ```bash
-# 1. Clone
+# 1. Clone the repository
 git clone https://github.com/vmkhanh2002/vn-stock-tracker.git
 cd vn-stock-tracker
 
-# 2. Node dependencies
+# 2. Install Node dependencies
 npm install
 
-# 3. Python dependencies
+# 3. Install Python dependencies
 python -m venv venv
 venv\Scripts\activate   # Windows
-pip install -r requirements.txt
+pip install -r api/py/requirements.txt
 
-# 4. Tạo .env.local từ example
+# 4. Create .env.local from example
 cp .env.example .env.local
-# → Điền DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL
+# → Fill in DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL
 
 # 5. Sync database schema
 npx prisma db push
 
-# 6. Chạy dev server
+# 6. Start dev server
 npm run dev
 ```
 
-Truy cập: http://localhost:3000
+Access: http://localhost:3000
 
 ---
 
-## Database (khi host local)
+## Database
 
-Dự án dùng **PostgreSQL** qua Prisma ORM. Có 3 lựa chọn:
+The project uses **PostgreSQL** via Prisma ORM. You can choose from:
 
-| Option | Mô tả | Phù hợp |
+| Option | Description | Best for |
 |---|---|---|
-| **PostgreSQL local** | Cài PostgreSQL trên máy | Dev offline |
+| **Local PostgreSQL** | Install PostgreSQL locally on your machine | Offline dev |
 | **[Neon](https://neon.tech)** | Serverless Postgres, free tier 0.5GB | Dev + staging |
-| **[Supabase](https://supabase.com)** | Postgres + UI quản lý, free tier | Dev + staging |
+| **[Supabase](https://supabase.com)** | Managed Postgres + Web Console | Dev + staging |
 
-**Connection string mẫu trong `.env.local`:**
+**Connection string formats in `.env.local`:**
 ```bash
 # Local PostgreSQL
 DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/vnstock_tracker"
@@ -199,50 +199,38 @@ DATABASE_URL="postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmo
 DATABASE_URL="postgresql://postgres:pass@db.xxx.supabase.co:5432/postgres"
 ```
 
-Sau khi có `DATABASE_URL`, chạy:
+Sync the database schema:
 ```bash
-npx prisma db push   # tạo bảng theo schema
+npx prisma db push
 ```
 
 ---
 
 ## Environment Variables
 
-| Biến | Bắt buộc | Mô tả |
+| Variable | Required | Description |
 |---|---|---|
 | `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `NEXTAUTH_SECRET` | ✅ | Secret key cho NextAuth session |
-| `NEXTAUTH_URL` | ✅ | URL public của app (vd: https://...) |
-| `TURSO_DATABASE_URL` | ❌ (Tùy chọn) | URL kết nối Turso Database (ví dụ: `libsql://...`). Được dùng làm Edge Cache lưu trữ dữ liệu Screener & Ratios. Nếu bỏ trống, hệ thống tự động fallback dùng cache cục bộ `/tmp` |
-| `TURSO_AUTH_TOKEN` | ❌ (Tùy chọn) | JWT Token xác thực kết nối của cơ sở dữ liệu Turso |
+| `NEXTAUTH_SECRET` | ✅ | Secret key for NextAuth session |
+| `NEXTAUTH_URL` | ✅ | Public URL of the app (e.g. https://...) |
+| `TURSO_DATABASE_URL` | ❌ (Optional) | Connection URL for Turso DB (`libsql://...`) for Edge Cache storage. Fallback to `/tmp` local files if blank. |
+| `TURSO_AUTH_TOKEN` | ❌ (Optional) | JWT Auth Token for Turso connection authentication. |
 
-> `VNSTOCK_API_KEY` và `OPENROUTER_API_KEY` **không** set ở cấp hệ thống — mỗi user tự nhập trong Settings.
+> `VNSTOCK_API_KEY` and `OPENROUTER_API_KEY` are **not** configured at the system level. Each user enters them in their personal Settings panel.
 
 ---
 
-## Nguồn dữ liệu
+## Data Sources
 
-| Nguồn | Mô tả |
+| Source | Description |
 |---|---|
-| **VCI** | Viet Capital Securities — ổn định, nhanh, mặc định |
-| **KBS** | Korea Investment & Securities — dùng cho FA ratios |
+| **VCI** | Viet Capital Securities — fast, stable, set as default |
+| **KBS** | Korea Investment & Securities — used for FA financial ratios |
 
 ---
 
-## Kho mã nguồn liên quan
+## Disclaimers
 
-Dự án tham khảo và tích hợp từ ba nguồn (lưu local tại `sources/`, không commit):
-
-| Repo | Mô tả |
-|---|---|
-| [vnstock-agent-guide](https://github.com/vnstock-hq/vnstock-agent-guide) | Tài liệu xây dựng AI Agent phân tích tài chính |
-| [vnstock](https://github.com/thinh-vu/vnstock) | Thư viện cốt lõi truy xuất dữ liệu thị trường VN |
-| [vnstock_ezchart](https://github.com/vnstock-hq/vnstock_ezchart) | Thư viện biểu đồ trực quan từ vnstock |
-
----
-
-## Lưu ý
-
-- Dữ liệu chỉ dùng cho mục đích nghiên cứu cá nhân
-- Không phải lời khuyến nghị đầu tư
-- AI phân tích dựa trên dữ liệu lịch sử — không đảm bảo kết quả trong tương lai
+- Market data is for personal research and educational purposes only.
+- None of the AI analysis or content represents investment recommendations.
+- AI analysis is based on historical data — future returns are not guaranteed.

@@ -10,7 +10,7 @@ const recStyle: Record<string, string> = {
   BAN: "bg-red-100 text-red-700 border-red-200",
   GIU: "bg-amber-100 text-amber-700 border-amber-200",
 }
-const recLabel: Record<string, string> = { MUA: "MUA", BAN: "BÁN", GIU: "GIỮ" }
+const recLabel: Record<string, string> = { MUA: "BUY", BAN: "SELL", GIU: "HOLD" }
 
 export default function AdminLogsPage() {
   const [page, setPage] = useState(1)
@@ -59,7 +59,7 @@ export default function AdminLogsPage() {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-slate-100 text-slate-500">
-                {["User","Symbol","Mode","Model","Prompt","Output","Latency","Rec","Ngày"].map((h) => (
+                {["User","Symbol","Mode","Model","Prompt","Output","Latency","Rec","Date"].map((h) => (
                   <th key={h} className="py-2 px-2 text-left font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -84,7 +84,7 @@ export default function AdminLogsPage() {
                     ) : "—"}
                   </td>
                   <td className="py-1.5 px-2 text-slate-400">
-                    {new Date(log.createdAt).toLocaleDateString("vi-VN")}
+                    {new Date(log.createdAt).toLocaleDateString("en-US")}
                   </td>
                 </tr>
               ))}

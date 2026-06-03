@@ -45,7 +45,7 @@ export function Topbar() {
                   className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-slate-700 hover:bg-slate-50 outline-none"
                 >
                   <User className="h-4 w-4" />
-                  Cài đặt
+                  Settings
                 </Link>
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="my-1 h-px bg-slate-100" />
@@ -54,7 +54,7 @@ export function Topbar() {
                 onSelect={() => signOut({ callbackUrl: "/login" })}
               >
                 <LogOut className="h-4 w-4" />
-                Đăng xuất
+                Logout
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>

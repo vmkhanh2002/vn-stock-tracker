@@ -15,7 +15,7 @@ export default function WatchlistPage() {
       <Tabs defaultValue="watchlist">
         <TabsList>
           <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
-          <TabsTrigger value="alerts">Cảnh báo giá</TabsTrigger>
+          <TabsTrigger value="alerts">Price Alerts</TabsTrigger>
         </TabsList>
         <TabsContent value="watchlist">
           <WatchlistTab />
@@ -51,22 +51,22 @@ function WatchlistTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Danh sách theo dõi</CardTitle>
+        <CardTitle className="text-base">Watchlist</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleAdd} className="flex flex-wrap gap-2">
-          <Input value={sym} onChange={(e) => setSym(e.target.value)} placeholder="Mã CK (VD: VNM)" className="w-32 uppercase" />
-          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ghi chú (tuỳ chọn)" className="flex-1 min-w-32" />
+          <Input value={sym} onChange={(e) => setSym(e.target.value)} placeholder="Symbol (e.g., VNM)" className="w-32 uppercase" />
+          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="flex-1 min-w-32" />
           <Button type="submit" size="sm" disabled={add.isPending}>
             <Plus className="h-4 w-4" />
-            Thêm
+            Add
           </Button>
         </form>
 
         {isLoading && <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>}
 
         {!isLoading && items.length === 0 && (
-          <p className="py-8 text-center text-sm text-slate-400">Chưa có mã nào. Thêm mã đầu tiên!</p>
+          <p className="py-8 text-center text-sm text-slate-400">No stocks added yet. Add your first symbol!</p>
         )}
 
         <div className="divide-y divide-slate-50">
@@ -76,7 +76,7 @@ function WatchlistTab() {
                 <span className="font-semibold text-slate-900">{item.symbol}</span>
                 {item.note && <span className="ml-2 text-xs text-slate-400">{item.note}</span>}
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Thêm {new Date(item.addedAt).toLocaleDateString("vi-VN")}
+                  Added {new Date(item.addedAt).toLocaleDateString("en-US")}
                 </p>
               </div>
               <button
@@ -126,23 +126,23 @@ function AlertsTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Cảnh báo giá</CardTitle>
+        <CardTitle className="text-base">Price Alerts</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleCreate} className="flex flex-wrap gap-2">
-          <Input value={sym} onChange={(e) => setSym(e.target.value)} placeholder="Mã CK" className="w-24 uppercase" />
+          <Input value={sym} onChange={(e) => setSym(e.target.value)} placeholder="Symbol" className="w-24 uppercase" />
           <select
             value={condition}
             onChange={(e) => setCondition(e.target.value as any)}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
           >
-            <option value="above">Trên</option>
-            <option value="below">Dưới</option>
+            <option value="above">Above</option>
+            <option value="below">Below</option>
           </select>
-          <Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Giá (VNĐ)" type="number" className="w-32" />
+          <Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price (VND)" type="number" className="w-32" />
           <Button type="submit" size="sm" disabled={create.isPending}>
             <Bell className="h-4 w-4" />
-            Tạo cảnh báo
+            Create Alert
           </Button>
         </form>
 
@@ -150,7 +150,7 @@ function AlertsTab() {
 
         {active.length > 0 && (
           <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Đang hoạt động</h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Active</h3>
             <div className="divide-y divide-slate-50">
               {active.map((alert) => (
                 <div key={alert.id} className="flex items-center justify-between py-3">
@@ -158,7 +158,7 @@ function AlertsTab() {
                     <Bell className="h-4 w-4 text-blue-500" />
                     <span className="font-semibold text-slate-900">{alert.symbol}</span>
                     <Badge variant="secondary" className="text-xs">
-                      {alert.condition === "above" ? "Trên" : "Dưới"} {formatVND(alert.price)}
+                      {alert.condition === "above" ? "Above" : "Below"} {formatVND(alert.price)}
                     </Badge>
                   </div>
                   <div className="flex gap-1">
@@ -177,7 +177,7 @@ function AlertsTab() {
 
         {inactive.length > 0 && (
           <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Đã kích hoạt / tắt</h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Fired / Inactive</h3>
             <div className="divide-y divide-slate-50 opacity-60">
               {inactive.map((alert) => (
                 <div key={alert.id} className="flex items-center justify-between py-2">
@@ -185,11 +185,11 @@ function AlertsTab() {
                     <BellOff className="h-4 w-4 text-slate-400" />
                     <span className="text-sm text-slate-600">{alert.symbol}</span>
                     <Badge variant="outline" className="text-xs">
-                      {alert.condition === "above" ? "Trên" : "Dưới"} {formatVND(alert.price)}
+                      {alert.condition === "above" ? "Above" : "Below"} {formatVND(alert.price)}
                     </Badge>
                     {alert.firedAt && (
                       <span className="text-xs text-slate-400">
-                        Kích hoạt: {new Date(alert.firedAt).toLocaleDateString("vi-VN")}
+                        Fired: {new Date(alert.firedAt).toLocaleDateString("en-US")}
                       </span>
                     )}
                   </div>
@@ -203,7 +203,7 @@ function AlertsTab() {
         )}
 
         {!isLoading && alerts.length === 0 && (
-          <p className="py-8 text-center text-sm text-slate-400">Chưa có cảnh báo nào.</p>
+          <p className="py-8 text-center text-sm text-slate-400">No alerts set.</p>
         )}
       </CardContent>
     </Card>

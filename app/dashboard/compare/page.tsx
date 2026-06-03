@@ -85,12 +85,12 @@ export default function ComparePage() {
           <Input
             value={newSym}
             onChange={(e) => setNewSym(e.target.value)}
-            placeholder="Thêm mã..."
+            placeholder="Add symbol..."
             className="w-28 uppercase"
           />
           <Button type="submit" size="sm" disabled={symbols.length >= 6}>
             <Plus className="h-4 w-4" />
-            Thêm
+            Add
           </Button>
         </form>
 
@@ -121,7 +121,7 @@ export default function ComparePage() {
                 : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
             }`}
           >
-            {d === 90 ? "3T" : d === 180 ? "6T" : "1N"}
+            {d === 90 ? "3M" : d === 180 ? "6M" : "1Y"}
           </button>
         ))}
       </div>
@@ -136,7 +136,7 @@ export default function ComparePage() {
       {allLoaded && chartData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Lợi nhuận tích lũy (chuẩn hoá, base = 100)</CardTitle>
+            <CardTitle className="text-base">Cumulative Return (normalized, base = 100)</CardTitle>
           </CardHeader>
           <CardContent>
             <ReturnChart data={chartData as any} symbols={symbols} height={400} />
@@ -148,14 +148,14 @@ export default function ComparePage() {
       {allLoaded && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Tóm tắt so sánh</CardTitle>
+            <CardTitle className="text-sm">Comparison Summary</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-xs text-slate-500">
-                    {["Mã", "Giá", "Hôm nay", "5 phiên", "Toàn kỳ", "Volatility"].map((h) => (
+                    {["Symbol", "Price", "Today", "5 Sessions", "All Time", "Volatility"].map((h) => (
                       <th key={h} className="py-2 px-3 text-right first:text-left font-medium">
                         {h}
                       </th>

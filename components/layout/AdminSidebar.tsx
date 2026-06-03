@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/admin",       label: "Dashboard",  icon: LayoutDashboard },
-  { href: "/admin/users", label: "Người dùng", icon: Users },
+  { href: "/admin/users", label: "Users",      icon: Users },
   { href: "/admin/logs",  label: "AI Logs",    icon: FileText },
 ]
 
@@ -41,7 +41,7 @@ export function AdminSidebar() {
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-500 hover:text-slate-700"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Quay lại Dashboard
+          Back to Dashboard
         </Link>
       </div>
     </aside>

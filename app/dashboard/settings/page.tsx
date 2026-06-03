@@ -63,7 +63,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-xl space-y-5">
-      <h1 className="text-lg font-semibold text-slate-900">Cài đặt</h1>
+      <h1 className="text-lg font-semibold text-slate-900">Settings</h1>
 
       <form onSubmit={handleSave} className="space-y-4">
         {/* OpenRouter API Key */}
@@ -76,22 +76,22 @@ export default function SettingsPage() {
               {settings?.hasOpenRouterKey ? (
                 <>
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-700">API Key đã được cấu hình</span>
+                  <span className="text-sm text-green-700">API Key configured</span>
                 </>
               ) : (
-                <span className="text-sm text-amber-700">⚠️ Chưa có API Key — AI Khuyến nghị sẽ không hoạt động</span>
+                <span className="text-sm text-amber-700">⚠️ No API Key configured — AI features will be disabled</span>
               )}
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600">
-                {settings?.hasOpenRouterKey ? "Đổi API Key mới" : "Nhập OpenRouter API Key"}
+                {settings?.hasOpenRouterKey ? "Change API Key" : "Enter OpenRouter API Key"}
               </label>
               <div className="relative">
                 <Input
                   type={showKey ? "text" : "password"}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={settings?.hasOpenRouterKey ? "Để trống = giữ key cũ" : "sk-or-v1-..."}
+                  placeholder={settings?.hasOpenRouterKey ? "Leave blank to keep current key" : "sk-or-v1-..."}
                   className="pr-10"
                 />
                 <button
@@ -103,12 +103,12 @@ export default function SettingsPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-400">
-                Lấy tại <span className="text-blue-600">openrouter.ai</span>. Key được mã hoá và lưu an toàn trong database.
+                Obtain at <span className="text-blue-600">openrouter.ai</span>. Keys are encrypted and securely stored.
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600">Model OpenRouter</label>
+              <label className="text-xs font-medium text-slate-600">OpenRouter Model</label>
               <Input
                 type="text"
                 value={model}
@@ -116,7 +116,7 @@ export default function SettingsPage() {
                 placeholder="openrouter/owl-alpha"
               />
               <p className="text-xs text-slate-400">
-                Tên model được dùng để AI phân tích chứng khoán (ví dụ: <code>openrouter/owl-alpha</code>, <code>google/gemini-2.5-pro</code>, <code>deepseek/deepseek-chat</code>...).
+                Model identifier for AI stock analysis (e.g., <code>openrouter/owl-alpha</code>, <code>google/gemini-2.5-pro</code>, <code>deepseek/deepseek-chat</code>).
               </p>
             </div>
           </CardContent>
@@ -132,22 +132,22 @@ export default function SettingsPage() {
               {settings?.hasVnstockKey ? (
                 <>
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-700">Vnstock Key đã được cấu hình</span>
+                  <span className="text-sm text-green-700">Vnstock Key configured</span>
                 </>
               ) : (
-                <span className="text-sm text-amber-700">⚠️ Chưa có Vnstock Key — dữ liệu chứng khoán sẽ không hoạt động</span>
+                <span className="text-sm text-amber-700">⚠️ No Vnstock Key configured — stock data retrieval will not function</span>
               )}
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600">
-                {settings?.hasVnstockKey ? "Đổi Vnstock Key mới" : "Nhập Vnstock Key cá nhân"}
+                {settings?.hasVnstockKey ? "Change Vnstock Key" : "Enter personal Vnstock Key"}
               </label>
               <div className="relative">
                 <Input
                   type={showVnstockKey ? "text" : "password"}
                   value={vnstockKey}
                   onChange={(e) => setVnstockKey(e.target.value)}
-                  placeholder={settings?.hasVnstockKey ? "Để trống = giữ key cũ" : "vnstock_..."}
+                  placeholder={settings?.hasVnstockKey ? "Leave blank to keep current key" : "vnstock_..."}
                   className="pr-10"
                 />
                 <button
@@ -159,7 +159,7 @@ export default function SettingsPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-400">
-                Tránh nghẽn băng thông bằng cách đăng ký Vnstock API Key cá nhân của bạn (Lấy miễn phí tại <span className="text-blue-600">vnstocks.com</span>).
+                Avoid bandwidth limits by using your personal Vnstock API Key (Get it for free at <span className="text-blue-600">vnstocks.com</span>).
               </p>
             </div>
           </CardContent>
@@ -172,17 +172,17 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-slate-500">
-              Tuỳ chỉnh vai trò và hành vi của AI khi phân tích chứng khoán. Để trống sẽ dùng prompt mặc định của hệ thống.
+              Customize the role and behavior of the AI for stock analysis. Leave blank to use the system default.
             </p>
             <Textarea
               rows={10}
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
-              placeholder={`Bạn là một Chuyên gia Kinh tế và Phân tích Tài chính...\n\n(Để trống = dùng prompt mặc định)`}
+              placeholder={`You are a financial analyst...\n\n(Leave blank to use default system prompt)`}
               className="font-mono text-xs resize-y"
             />
             <p className="text-xs text-slate-400">
-              Lưu ý: Biến động của khung đầu tư <code>{'{horizon}'}</code> và khẩu vị rủi ro <code>{'{risk}'}</code> sẽ được tự động điền vào khi phân tích.
+              Note: Investment horizon <code>{'{horizon}'}</code> and risk appetite <code>{'{risk}'}</code> parameters will be dynamically injected during analysis.
             </p>
           </CardContent>
         </Card>
@@ -190,11 +190,11 @@ export default function SettingsPage() {
         {/* Data Preferences */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Tuỳ chọn mặc định</CardTitle>
+            <CardTitle className="text-sm">Default Preferences</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600">Nguồn dữ liệu</label>
+              <label className="text-xs font-medium text-slate-600">Default Source</label>
               <div className="flex gap-2">
                 {(["VCI", "KBS"] as const).map((s) => (
                   <button
@@ -212,12 +212,12 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600">Khung thời gian</label>
+              <label className="text-xs font-medium text-slate-600">Default Interval</label>
               <div className="flex gap-2">
                 {[
-                  { v: "1D", l: "Ngày" },
-                  { v: "1W", l: "Tuần" },
-                  { v: "1M", l: "Tháng" },
+                  { v: "1D", l: "Day" },
+                  { v: "1W", l: "Week" },
+                  { v: "1M", l: "Month" },
                 ].map(({ v, l }) => (
                   <button
                     key={v}
@@ -239,9 +239,9 @@ export default function SettingsPage() {
           {update.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : saved ? (
-            <><CheckCircle className="h-4 w-4" /> Đã lưu!</>
+            <><CheckCircle className="h-4 w-4" /> Saved!</>
           ) : (
-            <><Save className="h-4 w-4" /> Lưu cài đặt</>
+            <><Save className="h-4 w-4" /> Save Settings</>
           )}
         </Button>
       </form>

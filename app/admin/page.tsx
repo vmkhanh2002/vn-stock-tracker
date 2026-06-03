@@ -28,27 +28,27 @@ export default function AdminPage() {
       <h1 className="text-lg font-semibold text-slate-900">Admin Dashboard</h1>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <KPICard label="Tổng người dùng" value={String(stats?.totalUsers ?? "—")} icon={<Users className="h-4 w-4" />} />
-        <KPICard label="AI calls hôm nay" value={String(stats?.totalToday ?? "—")} icon={<BrainCircuit className="h-4 w-4" />} />
-        <KPICard label="API Python" value={health?.status === "ok" ? "Online" : "Offline"} trend={health?.status === "ok" ? "up" : "down"} icon={<Activity className="h-4 w-4" />} />
+        <KPICard label="Total Users" value={String(stats?.totalUsers ?? "—")} icon={<Users className="h-4 w-4" />} />
+        <KPICard label="AI Calls Today" value={String(stats?.totalToday ?? "—")} icon={<BrainCircuit className="h-4 w-4" />} />
+        <KPICard label="Python API" value={health?.status === "ok" ? "Online" : "Offline"} trend={health?.status === "ok" ? "up" : "down"} icon={<Activity className="h-4 w-4" />} />
         <KPICard label="DB Date" value={health?.date ?? "—"} />
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">Phân phối khuyến nghị AI (tất cả thời gian)</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-sm">AI Recommendation Distribution (all time)</CardTitle></CardHeader>
         <CardContent>
           <div className="flex gap-6">
             <div className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-green-500" />
-              <span className="text-sm">MUA: <b>{mua}</b></span>
+              <span className="text-sm">BUY: <b>{mua}</b></span>
             </div>
             <div className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-red-500" />
-              <span className="text-sm">BÁN: <b>{ban}</b></span>
+              <span className="text-sm">SELL: <b>{ban}</b></span>
             </div>
             <div className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-amber-500" />
-              <span className="text-sm">GIỮ: <b>{giu}</b></span>
+              <span className="text-sm">HOLD: <b>{giu}</b></span>
             </div>
           </div>
         </CardContent>

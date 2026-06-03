@@ -17,28 +17,28 @@ import type { OHLCVRow } from "@/types"
 
 const SOURCES  = ["VCI", "KBS"] as const
 const INTERVALS = [
-  { v: "1D", l: "Ngày" },
-  { v: "1W", l: "Tuần" },
-  { v: "1M", l: "Tháng" },
+  { v: "1D", l: "Day" },
+  { v: "1W", l: "Week" },
+  { v: "1M", l: "Month" },
 ]
 const LOOKBACKS = [
-  { v: 90,  l: "3T" },
-  { v: 180, l: "6T" },
-  { v: 365, l: "1N" },
-  { v: 730, l: "2N" },
+  { v: 90,  l: "3M" },
+  { v: 180, l: "6M" },
+  { v: 365, l: "1Y" },
+  { v: 730, l: "2Y" },
 ]
 
 function getSignals(last: OHLCVRow, prev: OHLCVRow) {
   const signals: { label: string; signal: "bullish" | "bearish" | "neutral"; value?: string }[] = []
   if (last.ma10 && last.ma20) {
     signals.push({
-      label: last.close > last.ma20 ? "Trên MA20" : "Dưới MA20",
+      label: last.close > last.ma20 ? "Above MA20" : "Below MA20",
       signal: last.close > last.ma20 ? "bullish" : "bearish",
     })
   }
   if (last.rsi != null) {
     signals.push({
-      label: last.rsi > 70 ? "Quá mua" : last.rsi < 30 ? "Quá bán" : "RSI trung tính",
+      label: last.rsi > 70 ? "Overbought" : last.rsi < 30 ? "Oversold" : "RSI Neutral",
       signal: last.rsi > 70 ? "bearish" : last.rsi < 30 ? "bullish" : "neutral",
       value: last.rsi.toFixed(1),
     })
@@ -52,14 +52,14 @@ function getSignals(last: OHLCVRow, prev: OHLCVRow) {
   }
   if (last.adx != null) {
     signals.push({
-      label: last.adx > 25 ? "Xu hướng mạnh" : "Giằng co",
+      label: last.adx > 25 ? "Strong Trend" : "Range-bound",
       signal: last.adx > 25 ? (last.diPlus! > last.diMinus! ? "bullish" : "bearish") : "neutral",
       value: `ADX ${last.adx.toFixed(0)}`,
     })
   }
   if (last.stochK != null) {
     signals.push({
-      label: last.stochK > 80 ? "Stoch quá mua" : last.stochK < 20 ? "Stoch quá bán" : "Stoch trung tính",
+      label: last.stochK > 80 ? "Stoch Overbought" : last.stochK < 20 ? "Stoch Oversold" : "Stoch Neutral",
       signal: last.stochK > 80 ? "bearish" : last.stochK < 20 ? "bullish" : "neutral",
       value: `K${last.stochK.toFixed(0)}`,
     })
@@ -122,12 +122,12 @@ export default function LookupPage() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="VD: VNM, FPT, VHM"
+            placeholder="e.g., VNM, HPG, FPT"
             className="w-36 uppercase"
           />
           <Button type="submit" size="sm">
             <Search className="h-4 w-4" />
-            Tra cứu
+            Lookup
           </Button>
         </form>
 
@@ -206,22 +206,22 @@ export default function LookupPage() {
           {/* KPI Row 1 */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <KPICard
-              label="Giá đóng cửa"
+              label="Close Price"
               value={formatVND(last.close)}
-              sub={`${formatPct(chgPct)} hôm nay`}
+              sub={`${formatPct(chgPct)} today`}
               trend={chgPct == null ? undefined : chgPct > 0 ? "up" : chgPct < 0 ? "down" : "neutral"}
               icon={chgPct != null && chgPct > 0 ? <TrendingUp className="h-4 w-4" /> : chgPct != null && chgPct < 0 ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
             />
-            <KPICard label="Mở cửa" value={formatVND(last.open)} />
-            <KPICard label="Cao nhất" value={formatVND(last.high)} trend="up" />
-            <KPICard label="Thấp nhất" value={formatVND(last.low)} trend="down" />
+            <KPICard label="Open" value={formatVND(last.open)} />
+            <KPICard label="High" value={formatVND(last.high)} trend="up" />
+            <KPICard label="Low" value={formatVND(last.low)} trend="down" />
           </div>
 
           {/* KPI Row 2 */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <KPICard label="Khối lượng" value={formatVolume(last.volume)} sub={volRatio ? `${volRatio.toFixed(1)}× TB20` : undefined} />
-            <KPICard label="RSI(14)" value={last.rsi?.toFixed(1) ?? "—"} sub={last.rsi != null ? (last.rsi > 70 ? "Quá mua" : last.rsi < 30 ? "Quá bán" : "Trung tính") : undefined} />
-            <KPICard label="ADX" value={last.adx?.toFixed(1) ?? "—"} sub={last.adx != null ? (last.adx > 25 ? "Xu hướng mạnh" : "Giằng co") : undefined} />
+            <KPICard label="Volume" value={formatVolume(last.volume)} sub={volRatio ? `${volRatio.toFixed(1)}× 20MA Avg` : undefined} />
+            <KPICard label="RSI(14)" value={last.rsi?.toFixed(1) ?? "—"} sub={last.rsi != null ? (last.rsi > 70 ? "Overbought" : last.rsi < 30 ? "Oversold" : "Neutral") : undefined} />
+            <KPICard label="ADX" value={last.adx?.toFixed(1) ?? "—"} sub={last.adx != null ? (last.adx > 25 ? "Strong Trend" : "Range-bound") : undefined} />
             <KPICard label="MACD Hist" value={last.macdHist?.toFixed(2) ?? "—"} trend={last.macdHist != null ? (last.macdHist > 0 ? "up" : "down") : undefined} />
           </div>
 
@@ -305,9 +305,9 @@ export default function LookupPage() {
           {/* Data Table */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold">Lịch sử giao dịch</CardTitle>
+              <CardTitle className="text-sm font-semibold">Transaction History</CardTitle>
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <span>Hiển thị</span>
+                <span>Show</span>
                 <input
                   type="number"
                   min={5}
@@ -321,7 +321,7 @@ export default function LookupPage() {
                   }}
                   className="w-14 rounded-md border border-slate-200 px-1.5 py-1 text-center font-mono text-xs font-semibold focus:border-blue-500 focus:outline-none"
                 />
-                <span>phiên gần nhất</span>
+                <span>latest sessions</span>
               </div>
             </CardHeader>
             <CardContent>
@@ -329,7 +329,7 @@ export default function LookupPage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-500">
-                      {["Ngày", "Mở", "Cao", "Thấp", "Đóng", "KL", "% Thay đổi"].map((h) => (
+                      {["Date", "Open", "High", "Low", "Close", "Volume", "% Change"].map((h) => (
                         <th key={h} className="py-2 px-2 text-right first:text-left font-medium">
                           {h}
                         </th>

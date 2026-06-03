@@ -14,9 +14,9 @@ const GROUPS = [
   { id: "VN100", label: "VN100 (HOSE)" },
   { id: "VNMidCap", label: "VNMidCap (HOSE)" },
   { id: "VNSmallCap", label: "VNSmallCap (HOSE)" },
-  { id: "HOSE", label: "Sàn HOSE (Top 150)" },
-  { id: "HNX", label: "Sàn HNX (Top 150)" },
-  { id: "UPCOM", label: "Sàn UPCoM (Top 150)" },
+  { id: "HOSE", label: "HOSE Exchange (Top 150)" },
+  { id: "HNX", label: "HNX Exchange (Top 150)" },
+  { id: "UPCOM", label: "UPCoM Exchange (Top 150)" },
 ]
 
 export default function RealtimePage() {
@@ -29,7 +29,7 @@ export default function RealtimePage() {
     queryFn: async () => {
       const res = await fetch(`/api/py/stock/group-symbols?group=${group}`)
       if (!res.ok) {
-        throw new Error("Không thể tải danh sách cổ phiếu của rổ chỉ số")
+        throw new Error("Failed to load index group stock symbols")
       }
       return res.json() as Promise<{ symbols: string[]; count: number }>
     },
@@ -59,7 +59,7 @@ export default function RealtimePage() {
       {/* Top Header controls */}
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-lg font-semibold text-slate-900 tracking-tight">
-          Bảng giá Realtime ({selectedGroupLabel})
+          Real-time Prices ({selectedGroupLabel})
         </h1>
         
         {/* Dropdown chọn rổ cổ phiếu */}
@@ -92,18 +92,18 @@ export default function RealtimePage() {
 
         <Button variant="outline" size="sm" onClick={() => refetch()} className="h-8 gap-1">
           <RefreshCw className="h-3.5 w-3.5" />
-          Làm mới
+          Refresh
         </Button>
         {dataUpdatedAt > 0 && (
           <span className="text-xs text-slate-400 font-medium">
-            Cập nhật: {new Date(dataUpdatedAt).toLocaleTimeString("vi-VN")}
+            Updated: {new Date(dataUpdatedAt).toLocaleTimeString("en-US")}
           </span>
         )}
       </div>
 
       {error && (
         <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700 font-medium">
-          {error instanceof Error ? error.message : "Có lỗi xảy ra khi tải dữ liệu bảng giá."}
+          {error instanceof Error ? error.message : "An error occurred while loading price board data."}
         </div>
       )}
 
@@ -115,7 +115,7 @@ export default function RealtimePage() {
 
       {!isLoading && !error && rows.length === 0 && (
         <div className="rounded-lg border border-dashed border-slate-200 bg-white py-12 text-center text-sm text-slate-400">
-          Không có dữ liệu bảng giá cho rổ chỉ số này.
+          No price board data available for this index group.
         </div>
       )}
 
@@ -125,7 +125,7 @@ export default function RealtimePage() {
           <Card className="border-slate-100 shadow-sm">
             <CardHeader className="py-4 border-b border-slate-50">
               <CardTitle className="text-sm font-semibold text-slate-800">
-                Heatmap — màu theo % thay đổi, kích thước theo khối lượng giao dịch
+                Heatmap — color by % change, size by trading volume
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
@@ -152,14 +152,14 @@ export default function RealtimePage() {
           {/* Board Table */}
           <Card className="border-slate-100 shadow-sm overflow-hidden">
             <CardHeader className="py-4 border-b border-slate-50">
-              <CardTitle className="text-sm font-semibold text-slate-800">Bảng giá chi tiết ({rows.length} cổ phiếu)</CardTitle>
+              <CardTitle className="text-sm font-semibold text-slate-800">Detailed Price Board ({rows.length} stocks)</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-500 font-medium">
-                      {["Mã", "Giá đóng", "Mở cửa", "Cao nhất", "Thấp nhất", "Khối lượng", "Thay đổi", "% Thay đổi"].map((h) => (
+                      {["Symbol", "Close", "Open", "High", "Low", "Volume", "Change", "% Change"].map((h) => (
                         <th key={h} className="py-2.5 px-4 text-right first:text-left font-medium">
                           {h}
                         </th>

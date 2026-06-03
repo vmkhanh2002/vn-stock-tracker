@@ -26,13 +26,13 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-lg font-semibold text-slate-900">Người dùng ({total})</h1>
+      <h1 className="text-lg font-semibold text-slate-900">Users ({total})</h1>
       <Card>
         <CardContent className="pt-4">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-xs text-slate-500">
-                {["Email", "Tên", "Role", "Watchlist", "AI Calls", "Ngày tạo", "Hành động"].map((h) => (
+                {["Email", "Name", "Role", "Watchlist", "AI Calls", "Created At", "Action"].map((h) => (
                   <th key={h} className="py-2 px-3 text-left font-medium">{h}</th>
                 ))}
               </tr>
@@ -50,7 +50,7 @@ export default function AdminUsersPage() {
                   <td className="py-2 px-3 text-xs text-center">{user._count.watchlists}</td>
                   <td className="py-2 px-3 text-xs text-center">{user._count.aiUsageLogs}</td>
                   <td className="py-2 px-3 text-xs text-slate-500">
-                    {new Date(user.createdAt).toLocaleDateString("vi-VN")}
+                    {new Date(user.createdAt).toLocaleDateString("en-US")}
                   </td>
                   <td className="py-2 px-3">
                     <button

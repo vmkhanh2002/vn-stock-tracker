@@ -5,13 +5,13 @@ import { BarChart2, GitCompare, Activity, BrainCircuit, Bell, Settings, Trending
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/dashboard/lookup",   label: "Tra cứu mã",       icon: BarChart2 },
-  { href: "/dashboard/compare",  label: "So sánh mã",       icon: GitCompare },
-  { href: "/dashboard/realtime", label: "Realtime & Heatmap",icon: Activity },
-  { href: "/dashboard/screener", label: "Bộ lọc cổ phiếu",   icon: SlidersHorizontal },
-  { href: "/dashboard/ai",       label: "AI Khuyến nghị",   icon: BrainCircuit },
-  { href: "/dashboard/watchlist",label: "Watchlist & Cảnh báo",icon: Bell },
-  { href: "/dashboard/settings", label: "Cài đặt",          icon: Settings },
+  { href: "/dashboard/lookup",   label: "Stock Lookup",     icon: BarChart2 },
+  { href: "/dashboard/compare",  label: "Compare Stocks",   icon: GitCompare },
+  { href: "/dashboard/realtime", label: "Real-time & Heatmap", icon: Activity },
+  { href: "/dashboard/screener", label: "Stock Screener",   icon: SlidersHorizontal },
+  { href: "/dashboard/ai",       label: "AI Advisor",       icon: BrainCircuit },
+  { href: "/dashboard/watchlist",label: "Watchlist & Alerts", icon: Bell },
+  { href: "/dashboard/settings", label: "Settings",         icon: Settings },
 ]
 
 export function Sidebar() {

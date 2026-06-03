@@ -13,16 +13,16 @@ import { fetchAIContext } from "@/lib/api-client"
 import { dateNDaysAgo, today } from "@/lib/utils"
 import type { Recommendation } from "@/types"
 
-const HORIZONS = ["Ngắn hạn (1-5 phiên)", "Trung hạn (1-3 tháng)", "Dài hạn (> 6 tháng)"]
-const RISKS    = ["Thấp (bảo thủ)", "Trung bình", "Cao (tích cực)"]
+const HORIZONS = ["Short-term (1-5 sessions)", "Medium-term (1-3 months)", "Long-term (> 6 months)"]
+const RISKS    = ["Low (conservative)", "Medium", "High (aggressive)"]
 const LOOKBACKS = [
-  { v: 30,  l: "30 phiên" },
-  { v: 60,  l: "60 phiên" },
-  { v: 90,  l: "90 phiên" },
-  { v: 120, l: "120 phiên" },
-  { v: 180, l: "180 phiên" },
-  { v: 240, l: "240 phiên" },
-  { v: 300, l: "300 phiên" },
+  { v: 30,  l: "30 sessions" },
+  { v: 60,  l: "60 sessions" },
+  { v: 90,  l: "90 sessions" },
+  { v: 120, l: "120 sessions" },
+  { v: 180, l: "180 sessions" },
+  { v: 240, l: "240 sessions" },
+  { v: 300, l: "300 sessions" },
 ]
 
 function AnalyzePanel({ symbol }: { symbol: string }) {
@@ -80,7 +80,7 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">Khung đầu tư</label>
+          <label className="mb-1.5 block text-xs font-medium text-slate-600">Investment Horizon</label>
           <select
             value={horizon}
             onChange={(e) => setHorizon(e.target.value)}
@@ -90,7 +90,7 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
           </select>
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">Khẩu vị rủi ro</label>
+          <label className="mb-1.5 block text-xs font-medium text-slate-600">Risk Tolerance</label>
           <select
             value={risk}
             onChange={(e) => setRisk(e.target.value)}
@@ -100,7 +100,7 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
           </select>
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">Số phiên phân tích</label>
+          <label className="mb-1.5 block text-xs font-medium text-slate-600">Analysis Sessions</label>
           <select
             value={lookback}
             onChange={(e) => setLookback(Number(e.target.value))}
@@ -112,17 +112,17 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-slate-600">Câu hỏi tùy chỉnh (tuỳ chọn)</label>
+        <label className="mb-1.5 block text-xs font-medium text-slate-600">Custom Question (optional)</label>
         <Input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="VD: Khi nào nên chốt lời?"
+          placeholder="e.g., When should I take profit?"
         />
       </div>
 
       <Button onClick={analyze} disabled={loading || ctxLoading || !ctxData} className="w-full sm:w-auto">
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-        {ctxLoading ? "Đang tải dữ liệu..." : "Phân tích AI"}
+        {ctxLoading ? "Loading data..." : "AI Analysis"}
       </Button>
 
       {err && (
@@ -173,14 +173,14 @@ function ScanPanel() {
         const aiRes  = await fetch("/api/ai/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ context: ctxRes.context, symbol: sym, horizon: "Ngắn hạn", risk: "Trung bình", mode: "scan" }),
+          body: JSON.stringify({ context: ctxRes.context, symbol: sym, horizon: "Short-term", risk: "Medium", mode: "scan" }),
         })
         const d = await aiRes.json()
         if (aiRes.ok) {
           setResults((r) => [...r, { sym, rec: d.recommendation, answer: d.answer }])
         }
       } catch {
-        setResults((r) => [...r, { sym, rec: "GIU", answer: "Lỗi phân tích." }])
+        setResults((r) => [...r, { sym, rec: "GIU", answer: "Analysis error." }])
       }
     }
     setLoading(false)
@@ -191,7 +191,7 @@ function ScanPanel() {
     BAN: "bg-red-100 text-red-700",
     GIU: "bg-amber-100 text-amber-700",
   }
-  const recLabel: Record<Recommendation, string> = { MUA: "MUA", BAN: "BÁN", GIU: "GIỮ" }
+  const recLabel: Record<Recommendation, string> = { MUA: "BUY", BAN: "SELL", GIU: "HOLD" }
 
   return (
     <div className="space-y-4">
@@ -199,7 +199,7 @@ function ScanPanel() {
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="VNM, FPT, VIC, ... (tối đa 10 mã)"
+          placeholder="VNM, HPG, FPT, ... (max 10 symbols)"
           className="flex-1 min-w-[200px]"
         />
         <select
@@ -211,7 +211,7 @@ function ScanPanel() {
         </select>
         <Button onClick={startScan} disabled={loading} className="h-10">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-          Quét
+          Scan
         </Button>
       </div>
       {err && <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{err}</div>}
@@ -232,7 +232,7 @@ function ScanPanel() {
       )}
       {loading && symbols.length > results.length && (
         <p className="text-xs text-slate-500">
-          Đang phân tích {results.length + 1}/{symbols.length}: {symbols[results.length]}…
+          Analyzing {results.length + 1}/{symbols.length}: {symbols[results.length]}…
         </p>
       )}
     </div>
@@ -254,8 +254,8 @@ export default function AIPage() {
       <Tabs defaultValue="single">
         <div className="flex items-center gap-4">
           <TabsList>
-            <TabsTrigger value="single">Phân tích 1 mã</TabsTrigger>
-            <TabsTrigger value="scan">Quét nhiều mã</TabsTrigger>
+            <TabsTrigger value="single">Single Stock Analysis</TabsTrigger>
+            <TabsTrigger value="scan">Scan Multiple Stocks</TabsTrigger>
           </TabsList>
         </div>
 
@@ -263,15 +263,15 @@ export default function AIPage() {
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center gap-3">
-                <CardTitle className="text-base">AI Khuyến nghị — {symbol}</CardTitle>
+                <CardTitle className="text-base">AI Advisory — {symbol}</CardTitle>
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Mã CK..."
+                    placeholder="Symbol..."
                     className="w-28 uppercase"
                   />
-                  <Button type="submit" size="sm" variant="outline">Chọn</Button>
+                  <Button type="submit" size="sm" variant="outline">Select</Button>
                 </form>
               </div>
             </CardHeader>
@@ -284,8 +284,8 @@ export default function AIPage() {
         <TabsContent value="scan">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Quét danh mục</CardTitle>
-              <p className="text-xs text-slate-500 mt-1">Nhập nhiều mã, AI sẽ phân tích lần lượt và đưa ra khuyến nghị.</p>
+              <CardTitle className="text-base">Scan Portfolio</CardTitle>
+              <p className="text-xs text-slate-500 mt-1">Enter multiple symbols, AI will analyze them sequentially and provide recommendations.</p>
             </CardHeader>
             <CardContent>
               <ScanPanel />

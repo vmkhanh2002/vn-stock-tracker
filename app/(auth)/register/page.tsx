@@ -25,7 +25,7 @@ export default function RegisterPage() {
       })
       if (!res.ok) {
         const d = await res.json()
-        setError(d.error ?? "Đăng ký thất bại")
+        setError(d.error ?? "Registration failed")
         return
       }
       router.push("/login?registered=1")
@@ -41,7 +41,7 @@ export default function RegisterPage() {
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 shadow-lg">
             <TrendingUp className="h-6 w-6 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-slate-900">Tạo tài khoản</h1>
+          <h1 className="text-xl font-bold text-slate-900">Create Account</h1>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -52,24 +52,24 @@ export default function RegisterPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Họ tên</label>
-              <Input placeholder="Nguyễn Văn A" value={name} onChange={(e) => setName(e.target.value)} />
+              <label className="text-sm font-medium text-slate-700">Full Name</label>
+              <Input placeholder="John Doe" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-700">Email</label>
               <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Mật khẩu</label>
-              <Input type="password" placeholder="Tối thiểu 8 ký tự" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+              <label className="text-sm font-medium text-slate-700">Password</label>
+              <Input type="password" placeholder="Min 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Đăng ký"}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Register"}
             </Button>
           </form>
           <div className="mt-4 text-center">
-            <span className="text-sm text-slate-500">Đã có tài khoản? </span>
-            <a href="/login" className="text-sm font-medium text-blue-600 hover:underline">Đăng nhập</a>
+            <span className="text-sm text-slate-500">Already have an account? </span>
+            <a href="/login" className="text-sm font-medium text-blue-600 hover:underline">Sign In</a>
           </div>
         </div>
       </div>
