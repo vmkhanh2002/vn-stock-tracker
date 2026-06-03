@@ -57,7 +57,7 @@ export function CandlestickChart({ data, height = 440, ma10, ma20, ma50, bbands 
 
     const lineData = (key: keyof OHLCVRow) =>
       data
-        .filter((r) => r[key] != null)
+        .filter((r) => r[key] != null && typeof r[key] === "number" && !isNaN(r[key] as number))
         .map((r) => ({ time: r.time as any, value: r[key] as number }))
 
     if (ma10) {
@@ -73,9 +73,9 @@ export function CandlestickChart({ data, height = 440, ma10, ma20, ma50, bbands 
       s.setData(lineData("ma50"))
     }
     if (bbands) {
-      const upper = chart.addLineSeries({ color: "#94a3b8", lineWidth: 1, lineStyle: LineStyle.Dashed, title: "BB Upper" })
+      const upper = chart.addLineSeries({ color: "#94a3b8", lineWidth: 1, title: "BB Upper" })
       upper.setData(lineData("bbUpper"))
-      const lower = chart.addLineSeries({ color: "#94a3b8", lineWidth: 1, lineStyle: LineStyle.Dashed, title: "BB Lower" })
+      const lower = chart.addLineSeries({ color: "#94a3b8", lineWidth: 1, title: "BB Lower" })
       lower.setData(lineData("bbLower"))
     }
 
