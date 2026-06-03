@@ -107,6 +107,35 @@ Truy cập: http://localhost:3000
 
 ---
 
+## 🗄 Database (khi host local)
+
+Dự án dùng **PostgreSQL** qua Prisma ORM. Có 3 lựa chọn:
+
+| Option | Mô tả | Phù hợp |
+|---|---|---|
+| **PostgreSQL local** | Cài PostgreSQL trên máy | Dev offline |
+| **[Neon](https://neon.tech)** | Serverless Postgres, free tier 0.5GB | Dev + staging |
+| **[Supabase](https://supabase.com)** | Postgres + UI quản lý, free tier | Dev + staging |
+
+**Connection string mẫu trong `.env.local`:**
+```bash
+# Local PostgreSQL
+DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/vnstock_tracker"
+
+# Neon
+DATABASE_URL="postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
+
+# Supabase
+DATABASE_URL="postgresql://postgres:pass@db.xxx.supabase.co:5432/postgres"
+```
+
+Sau khi có `DATABASE_URL`, chạy:
+```bash
+npx prisma db push   # tạo bảng theo schema
+```
+
+---
+
 ## 🌍 Environment Variables
 
 | Biến | Bắt buộc | Mô tả |
