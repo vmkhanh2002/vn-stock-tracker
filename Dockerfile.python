@@ -1,0 +1,26 @@
+FROM python:3.11-slim
+WORKDIR /app
+
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+ && rm -rf /var/lib/apt/lists/*
+
+# Python deps
+COPY api/py/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# App source
+COPY api/py/ ./
+
+# Disable vnstock ads/notices
+ENV VNSTOCK_SHOW_ADS=0
+ENV VNSTOCK_DISABLE_NOTICE=1
+ENV HOME=/tmp
+ENV TMPDIR=/tmp
+
+RUN mkdir -p /tmp/.vnstock
+
+EXPOSE 8000
+
+CMD ["uvicorn", "index:app", "--host", "0.0.0.0", "--port", "8000"]

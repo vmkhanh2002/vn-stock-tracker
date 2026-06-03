@@ -1,0 +1,83 @@
+version: "3.9"
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: vnstock_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vnstock}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vnstock_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-vnstock_tracker}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vnstock}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI (Python data layer) ─────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: vnstock_api
+    restart: unless-stopped
+    environment:
+      VNSTOCK_SHOW_ADS: "0"
+      VNSTOCK_DISABLE_NOTICE: "1"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Next.js App ─────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vnstock_web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vnstock}:${POSTGRES_PASSWORD:-vnstock_secret}@db:5432/${POSTGRES_DB:-vnstock_tracker}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      # Proxy Next.js → FastAPI (running in Docker network)
+      PYTHON_API_URL: http://api:8000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+
+  # ── DB Migration (chạy 1 lần khi start) ────────────────────────────────
+  migrate:
+    image: node:20-alpine
+    container_name: vnstock_migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-vnstock}:${POSTGRES_PASSWORD:-vnstock_secret}@db:5432/${POSTGRES_DB:-vnstock_tracker}
+    working_dir: /app
+    volumes:
+      - ./prisma:/app/prisma
+      - ./node_modules:/app/node_modules
+      - ./package.json:/app/package.json
+    command: >
+      sh -c "npx prisma db push --skip-generate"
+    restart: "no"
+
+volumes:
+  postgres_data:
+    driver: local

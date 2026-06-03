@@ -77,7 +77,73 @@ Prompt hỗ trợ placeholder động:
 
 ---
 
-## 🚀 Cài đặt local
+## 🐳 Self-host với Docker (khuyến nghị)
+
+Cách đơn giản nhất để chạy trên máy hoặc VPS cá nhân — không cần cài Node, Python, hay PostgreSQL riêng lẻ.
+
+### Kiến trúc Docker
+
+```
+docker-compose.yml
+├── db        (PostgreSQL 16)      — port 5432
+├── api       (FastAPI / uvicorn)  — port 8000
+├── web       (Next.js standalone) — port 3000
+└── migrate   (prisma db push)     — chạy 1 lần khi start
+```
+
+### Cài đặt
+
+**Yêu cầu:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac) hoặc Docker Engine (Linux)
+
+```bash
+# 1. Clone repo
+git clone https://github.com/vmkhanh2002/vn-stock-tracker.git
+cd vn-stock-tracker
+
+# 2. Tạo file env
+cp .env.docker .env.docker.local
+# → Mở .env.docker.local và đổi POSTGRES_PASSWORD, NEXTAUTH_SECRET
+
+# 3. Build và chạy
+docker compose --env-file .env.docker.local up -d --build
+
+# 4. Kiểm tra trạng thái
+docker compose ps
+```
+
+Truy cập: **http://localhost:3000** 🎉
+
+### Lần chạy sau (không cần build lại)
+
+```bash
+docker compose --env-file .env.docker.local up -d
+```
+
+### Dừng / Xóa
+
+```bash
+docker compose down          # dừng, giữ data
+docker compose down -v       # dừng + xóa DB data
+```
+
+### Xem logs
+
+```bash
+docker compose logs -f web   # Next.js logs
+docker compose logs -f api   # FastAPI logs
+docker compose logs -f db    # PostgreSQL logs
+```
+
+### Cập nhật lên version mới
+
+```bash
+git pull
+docker compose --env-file .env.docker.local up -d --build
+```
+
+---
+
+## 🚀 Cài đặt local (không Docker)
 
 ```bash
 # 1. Clone
