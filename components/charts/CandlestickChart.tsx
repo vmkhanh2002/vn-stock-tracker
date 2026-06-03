@@ -25,7 +25,12 @@ export function CandlestickChart({ data, height = 440, ma10, ma20, ma50, bbands 
   useEffect(() => {
     if (!containerRef.current || data.length === 0) return
 
-    chartRef.current?.remove()
+    if (chartRef.current) {
+      try {
+        chartRef.current.remove()
+      } catch (e) {}
+      chartRef.current = undefined
+    }
 
     const chart = createChart(containerRef.current, {
       height,
@@ -89,7 +94,10 @@ export function CandlestickChart({ data, height = 440, ma10, ma20, ma50, bbands 
     window.addEventListener("resize", handleResize)
     return () => {
       window.removeEventListener("resize", handleResize)
-      chart.remove()
+      try {
+        chart.remove()
+      } catch (e) {}
+      chartRef.current = undefined
     }
   }, [data, height, ma10, ma20, ma50, bbands])
 

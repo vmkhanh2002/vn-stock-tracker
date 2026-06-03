@@ -14,7 +14,12 @@ export function VolumeChart({ data, height = 120 }: Props) {
 
   useEffect(() => {
     if (!containerRef.current || data.length === 0) return
-    chartRef.current?.remove()
+    if (chartRef.current) {
+      try {
+        chartRef.current.remove()
+      } catch (e) {}
+      chartRef.current = undefined
+    }
 
     const chart = createChart(containerRef.current, {
       height,
@@ -46,7 +51,10 @@ export function VolumeChart({ data, height = 120 }: Props) {
     window.addEventListener("resize", handleResize)
     return () => {
       window.removeEventListener("resize", handleResize)
-      chart.remove()
+      try {
+        chart.remove()
+      } catch (e) {}
+      chartRef.current = undefined
     }
   }, [data, height])
 
