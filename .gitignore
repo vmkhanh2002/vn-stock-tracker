@@ -30,3 +30,13 @@ alerts.json
 .env*.local
 
 python-api/
+
+# ── Local reference sources (not committed) ───────────────────────────────
+sources/
+
+# ── Backup files ──────────────────────────────────────────────────────────
+*.bak
+
+# ── AI assistant config ───────────────────────────────────────────────────
+.claude/
+.remember/

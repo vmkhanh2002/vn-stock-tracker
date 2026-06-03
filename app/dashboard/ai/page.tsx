@@ -3,6 +3,7 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { BrainCircuit, Loader2, Search, ChevronDown } from "lucide-react"
 import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { AIBadge } from "@/components/dashboard/AIBadge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -114,9 +115,9 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
       )}
 
       {answer && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
-          <div className="prose prose-sm max-w-none text-slate-800 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_table]:text-xs [&_code]:text-xs">
-            <ReactMarkdown>{answer}</ReactMarkdown>
+        <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+          <div className="prose prose-sm max-w-none text-slate-800">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer}</ReactMarkdown>
           </div>
         </div>
       )}

@@ -5,8 +5,10 @@ export const userRouter = router({
   updateSettings: protectedProcedure
     .input(
       z.object({
-        geminiApiKey: z.string().min(10).optional(),
-        geminiModel: z.string().optional(),
+        openrouterApiKey: z.string().min(10).optional(),
+        vnstockApiKey: z.string().min(10).optional(),
+        openrouterModel: z.string().optional(),
+        aiSystemPrompt: z.string().optional(),
         defaultSource: z.enum(["VCI", "KBS"]).optional(),
         defaultInterval: z.enum(["1D", "1W", "1M"]).optional(),
       })
@@ -22,17 +24,22 @@ export const userRouter = router({
     const u = await ctx.prisma.user.findUnique({
       where: { id: ctx.session.user.id },
       select: {
-        geminiModel: true,
+        openrouterModel: true,
         defaultSource: true,
         defaultInterval: true,
-        geminiApiKey: true,
+        openrouterApiKey: true,
+        vnstockApiKey: true,
+        aiSystemPrompt: true,
       },
     })
     return {
-      geminiModel: u?.geminiModel ?? "gemini-2.5-flash-lite",
+      openrouterModel: u?.openrouterModel ?? "openrouter/owl-alpha",
       defaultSource: u?.defaultSource ?? "VCI",
       defaultInterval: u?.defaultInterval ?? "1D",
-      hasGeminiKey: !!u?.geminiApiKey,
+      hasOpenRouterKey: !!u?.openrouterApiKey,
+      hasVnstockKey: !!u?.vnstockApiKey,
+      vnstockApiKey: u?.vnstockApiKey ?? null,
+      aiSystemPrompt: u?.aiSystemPrompt ?? null,
     }
   }),
 

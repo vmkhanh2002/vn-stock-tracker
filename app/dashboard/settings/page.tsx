@@ -5,37 +5,51 @@ import { trpc } from "@/lib/trpc/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function SettingsPage() {
   const { data: settings, isLoading } = trpc.user.getSettings.useQuery()
   const update = trpc.user.updateSettings.useMutation()
 
-  const [apiKey,   setApiKey]   = useState("")
-  const [model,    setModel]    = useState("gemini-2.5-flash-lite")
-  const [source,   setSource]   = useState<"VCI" | "KBS">("VCI")
-  const [interval, setInterval] = useState<"1D" | "1W" | "1M">("1D")
-  const [showKey,  setShowKey]  = useState(false)
-  const [saved,    setSaved]    = useState(false)
+  const [apiKey,       setApiKey]       = useState("")
+  const [vnstockKey,   setVnstockKey]   = useState("")
+  const [model,        setModel]        = useState("openrouter/owl-alpha")
+  const [systemPrompt, setSystemPrompt] = useState("")
+  const [source,       setSource]       = useState<"VCI" | "KBS">("VCI")
+  const [interval,     setInterval]     = useState<"1D" | "1W" | "1M">("1D")
+  const [showKey,      setShowKey]      = useState(false)
+  const [showVnstockKey, setShowVnstockKey] = useState(false)
+  const [saved,        setSaved]        = useState(false)
 
   useEffect(() => {
     if (settings) {
-      setModel(settings.geminiModel)
+      setModel(settings.openrouterModel || "openrouter/owl-alpha")
       setSource(settings.defaultSource as any)
       setInterval(settings.defaultInterval as any)
+      setSystemPrompt(settings.aiSystemPrompt ?? "")
+      if (settings.vnstockApiKey) {
+        document.cookie = `vnstock_api_key=${settings.vnstockApiKey}; path=/; max-age=31536000; SameSite=Lax`
+      }
     }
   }, [settings])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     const payload: Parameters<typeof update.mutate>[0] = {
-      geminiModel:     model,
+      openrouterModel: model,
       defaultSource:   source,
       defaultInterval: interval,
+      aiSystemPrompt:  systemPrompt.trim() || undefined,
     }
-    if (apiKey.trim().length >= 10) payload.geminiApiKey = apiKey.trim()
+    if (apiKey.trim().length >= 10) payload.openrouterApiKey = apiKey.trim()
+    if (vnstockKey.trim().length >= 10) {
+      payload.vnstockApiKey = vnstockKey.trim()
+      document.cookie = `vnstock_api_key=${vnstockKey.trim()}; path=/; max-age=31536000; SameSite=Lax`
+    }
     await update.mutateAsync(payload)
     setSaved(true)
     setApiKey("")
+    setVnstockKey("")
     setTimeout(() => setSaved(false), 3000)
   }
 
@@ -52,14 +66,14 @@ export default function SettingsPage() {
       <h1 className="text-lg font-semibold text-slate-900">Cài đặt</h1>
 
       <form onSubmit={handleSave} className="space-y-4">
-        {/* Gemini API Key */}
+        {/* OpenRouter API Key */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Gemini API Key</CardTitle>
+            <CardTitle className="text-sm">OpenRouter API Key</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-4 py-3">
-              {settings?.hasGeminiKey ? (
+              {settings?.hasOpenRouterKey ? (
                 <>
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <span className="text-sm text-green-700">API Key đã được cấu hình</span>
@@ -70,14 +84,14 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600">
-                {settings?.hasGeminiKey ? "Đổi API Key mới" : "Nhập Gemini API Key"}
+                {settings?.hasOpenRouterKey ? "Đổi API Key mới" : "Nhập OpenRouter API Key"}
               </label>
               <div className="relative">
                 <Input
                   type={showKey ? "text" : "password"}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={settings?.hasGeminiKey ? "Để trống = giữ key cũ" : "AIza..."}
+                  placeholder={settings?.hasOpenRouterKey ? "Để trống = giữ key cũ" : "sk-or-v1-..."}
                   className="pr-10"
                 />
                 <button
@@ -89,23 +103,87 @@ export default function SettingsPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-400">
-                Lấy tại{" "}
-                <span className="text-blue-600">aistudio.google.com</span>. Key được mã hoá và lưu an toàn trong database.
+                Lấy tại <span className="text-blue-600">openrouter.ai</span>. Key được mã hoá và lưu an toàn trong database.
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600">Gemini Model</label>
-              <select
+              <label className="text-xs font-medium text-slate-600">Model OpenRouter</label>
+              <Input
+                type="text"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-              >
-                <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite (Nhanh, tiết kiệm)</option>
-                <option value="gemini-2.5-flash">gemini-2.5-flash (Cân bằng)</option>
-                <option value="gemini-2.5-pro">gemini-2.5-pro (Mạnh nhất)</option>
-              </select>
+                placeholder="openrouter/owl-alpha"
+              />
+              <p className="text-xs text-slate-400">
+                Tên model được dùng để AI phân tích chứng khoán (ví dụ: <code>openrouter/owl-alpha</code>, <code>google/gemini-2.5-pro</code>, <code>deepseek/deepseek-chat</code>...).
+              </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Vnstock API Key */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Vnstock API Key / Premium Token</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-4 py-3">
+              {settings?.hasVnstockKey ? (
+                <>
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-700">Vnstock Key đã được cấu hình</span>
+                </>
+              ) : (
+                <span className="text-sm text-slate-500">Sử dụng key mặc định của hệ thống</span>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-slate-600">
+                {settings?.hasVnstockKey ? "Đổi Vnstock Key mới" : "Nhập Vnstock Key cá nhân"}
+              </label>
+              <div className="relative">
+                <Input
+                  type={showVnstockKey ? "text" : "password"}
+                  value={vnstockKey}
+                  onChange={(e) => setVnstockKey(e.target.value)}
+                  placeholder={settings?.hasVnstockKey ? "Để trống = giữ key cũ" : "vnstock_..."}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowVnstockKey((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showVnstockKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-slate-400">
+                Tránh nghẽn băng thông bằng cách đăng ký Vnstock API Key cá nhân của bạn (Lấy miễn phí tại <span className="text-blue-600">vnstocks.com</span>).
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI System Prompt */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">AI System Prompt</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-slate-500">
+              Tuỳ chỉnh vai trò và hành vi của AI khi phân tích chứng khoán. Để trống sẽ dùng prompt mặc định của hệ thống.
+            </p>
+            <Textarea
+              rows={10}
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              placeholder={`Bạn là một Chuyên gia Kinh tế và Phân tích Tài chính...\n\n(Để trống = dùng prompt mặc định)`}
+              className="font-mono text-xs resize-y"
+            />
+            <p className="text-xs text-slate-400">
+              Lưu ý: Biến động của khung đầu tư <code>{'{horizon}'}</code> và khẩu vị rủi ro <code>{'{risk}'}</code> sẽ được tự động điền vào khi phân tích.
+            </p>
           </CardContent>
         </Card>
 

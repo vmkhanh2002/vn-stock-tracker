@@ -70,7 +70,9 @@ export default function AdminLogsPage() {
                   <td className="py-1.5 px-2 text-slate-600">{log.user?.email}</td>
                   <td className="py-1.5 px-2 font-semibold">{log.symbol ?? "—"}</td>
                   <td className="py-1.5 px-2">{log.mode}</td>
-                  <td className="py-1.5 px-2 text-slate-400 font-mono">{log.model.replace("gemini-", "g-")}</td>
+                  <td className="py-1.5 px-2 text-slate-400 font-mono">
+                    {log.model.replace("gemini-", "g-").replace("openrouter/", "or/")}
+                  </td>
                   <td className="py-1.5 px-2 text-right">{log.promptTokens ?? "—"}</td>
                   <td className="py-1.5 px-2 text-right">{log.outputTokens ?? "—"}</td>
                   <td className="py-1.5 px-2 text-right">{log.latencyMs ? `${log.latencyMs}ms` : "—"}</td>

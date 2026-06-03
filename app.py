@@ -242,26 +242,23 @@ with st.sidebar:
 
     # ── API Keys ──
     with st.expander("🔑 API Keys"):
-        _key_loaded = bool(os.environ.get("GEMINI_API_KEY"))
+        _key_loaded = bool(os.environ.get("OPENROUTER_API_KEY"))
         if _key_loaded:
-            st.success("✅ Gemini API Key đã tải từ `.env`", icon="🔐")
+            st.success("✅ OpenRouter API Key đã tải từ `.env`", icon="🔐")
         else:
             st.warning("Chưa có API Key.", icon="⚠️")
         # KHÔNG pre-fill value với key thật — tránh lộ qua browser widget state
-        gemini_key = st.text_input(
-            "Nhập/đổi Gemini API Key",
+        openrouter_key = st.text_input(
+            "Nhập/đổi OpenRouter API Key",
             value="",
             type="password",
-            key="gemini_key_input",
-            placeholder="AIza… (để trống nếu đã có trong .env)")
-        gemini_model = st.text_input(
-            "Gemini Model",
-            value=os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite"))
-        if gemini_key:
-            os.environ["GEMINI_API_KEY"] = gemini_key
-            os.environ["GEMINI_MODEL"]   = gemini_model
+            key="openrouter_key_input",
+            placeholder="sk-or-v1-… (để trống nếu đã có trong .env)")
+        if openrouter_key:
+            os.environ["OPENROUTER_API_KEY"] = openrouter_key
             st.toast("✅ Đã cập nhật API Key cho phiên này.")
-        st.caption("💡 Lưu vào file `.env` để không cần nhập lại mỗi lần.")
+        model_name = os.environ.get("OPENROUTER_MODEL", "openrouter/owl-alpha")
+        st.caption(f"💡 Sử dụng model: **{model_name}**. Lưu vào file `.env` để không cần nhập lại.")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DATA & INDICATOR HELPERS
@@ -1183,16 +1180,15 @@ elif tab_mode == "📡 Realtime + Heatmap":
 # MODE 4 — AI Khuyến nghị
 # ═════════════════════════════════════════════════════════════════════════════
 elif tab_mode == "🤖 AI Khuyến nghị":
-    GEMINI_KEY   = os.environ.get("GEMINI_API_KEY", "")
-    GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash-lite")
+    OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 
     st.markdown("""<div class='page-header'>
-        <div class='page-title'>🤖 AI Phân tích & Khuyến nghị</div>
-        <div class='page-sub'>Gemini phân tích kỹ thuật + tài chính · Chỉ mang tính tham khảo</div>
+        <div class='page-title'>🤖 AI Phân tích & Khuyến nghị (Owl Alpha)</div>
+        <div class='page-sub'>OpenRouter Owl Alpha phân tích kỹ thuật + tài chính · Chỉ mang tính tham khảo</div>
     </div>""", unsafe_allow_html=True)
 
-    if not GEMINI_KEY:
-        st.warning("⚠️ Chưa có Gemini API Key. Vui lòng nhập ở **sidebar → 🔑 API Keys**.")
+    if not OPENROUTER_KEY:
+        st.warning("⚠️ Chưa có OpenRouter API Key. Vui lòng nhập ở **sidebar → 🔑 API Keys**.")
         st.stop()
 
     ai_mode = st.radio("Chế độ phân tích", ["🔍 Phân tích 1 mã", "🔭 Quét danh mục"],
@@ -1280,21 +1276,57 @@ date,open,high,low,close,volume,rsi,macd_hist,return_pct
                     md += f"| {lbl} | {val:.2f} |\n"
         return md
 
-    def call_gemini(prompt: str) -> str:
-        from google import genai
-        from google.genai import errors as ge
-        client = genai.Client(api_key=GEMINI_KEY)
+    def call_openrouter(prompt: str) -> str:
+        import requests
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_KEY}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://vn-stock-tracker-swart.vercel.app",
+            "X-Title": "VN Stock Tracker"
+        }
+        model_name = os.environ.get("OPENROUTER_MODEL", "openrouter/owl-alpha")
+        payload = {
+            "model": model_name,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.3,
+            "max_tokens": 1500
+        }
         for attempt in range(1, 4):
             try:
-                return client.models.generate_content(
-                    model=GEMINI_MODEL, contents=prompt).text
-            except ge.ServerError as e:
+                res = requests.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=90
+                )
+                if res.status_code == 200:
+                    data = res.json()
+                    content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    if content:
+                        return content
+                    else:
+                        return "❌ Lỗi: Phản hồi từ OpenRouter rỗng."
+                else:
+                    err_msg = res.text
+                    try:
+                        err_json = res.json()
+                        err_msg = err_json.get("error", {}).get("message", res.text)
+                    except: pass
+                    if attempt < 3:
+                        wait = 6 * attempt
+                        st.toast(f"⏳ OpenRouter lỗi ({res.status_code}), thử lại sau {wait}s ({attempt}/3)…")
+                        _time.sleep(wait)
+                    else:
+                        return f"❌ Lỗi OpenRouter ({res.status_code}): {err_msg}"
+            except Exception as e:
                 if attempt < 3:
                     wait = 6 * attempt
-                    st.toast(f"⏳ Gemini bận, thử lại sau {wait}s ({attempt}/3)…")
+                    st.toast(f"⏳ Lỗi kết nối OpenRouter, thử lại sau {wait}s ({attempt}/3)…")
                     _time.sleep(wait)
-                else: return f"❌ Gemini quá tải sau 3 lần thử: {e}"
-            except Exception as e: return f"❌ Lỗi API: {e}"
+                else:
+                    return f"❌ Lỗi kết nối API: {e}"
 
     def _prompt_single(md_ctx, question, horizon, risk):
         return f"""Bạn là chuyên gia phân tích chứng khoán Việt Nam 15 năm kinh nghiệm.
@@ -1408,8 +1440,8 @@ Trả lời bằng tiếng Việt, dùng bảng Markdown và tiêu đề rõ rà
             q     = user_q.strip() or f"Tôi có nên mua {ai_sym} không?"
             prompt = _prompt_single(ctx, q, horizon, risk)
 
-            with st.spinner("🤖 Gemini đang phân tích dữ liệu…"):
-                answer = call_gemini(prompt)
+            with st.spinner("🤖 Owl Alpha đang phân tích dữ liệu…"):
+                answer = call_openrouter(prompt)
 
             # Badge khuyến nghị
             rec = ("MUA" if "MUA" in answer[:400].upper() else
@@ -1494,8 +1526,8 @@ Trả lời bằng tiếng Việt, dùng bảng Markdown và tiêu đề rõ rà
                 st.stop()
 
             prompt = _prompt_scan(summaries, horizon, risk)
-            with st.spinner(f"🤖 Gemini đang phân tích {len(summaries)} mã…"):
-                answer = call_gemini(prompt)
+            with st.spinner(f"🤖 Owl Alpha đang phân tích {len(summaries)} mã…"):
+                answer = call_openrouter(prompt)
 
             st.markdown("<hr class='div-line'>", unsafe_allow_html=True)
             st.markdown(f"### 🔭 Kết quả quét: {', '.join(s for s, _ in summaries)}")

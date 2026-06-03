@@ -32,6 +32,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def add_vnstock_key_middleware(request, call_next):
+    key = request.headers.get("x-vnstock-api-key") or request.headers.get("X-Vnstock-Api-Key")
+    if not key:
+        key = request.cookies.get("vnstock_api_key")
+    if key:
+        os.environ["VNSTOCK_API_KEY"] = key
+        try:
+            from vnstock import change_api_key
+            change_api_key(key)
+        except Exception:
+            pass
+    return await call_next(request)
+
 from routers.stock import router as stock_router
 from routers.indicators import router as ind_router
 from routers.ai_context import router as ai_router

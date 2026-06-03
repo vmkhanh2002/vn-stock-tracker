@@ -26,7 +26,7 @@ class AIContextRequest(BaseModel):
     params:   IndicatorParams = IndicatorParams()
 
 
-def build_context(df: pd.DataFrame, symbol: str) -> str:
+def build_context(df: pd.DataFrame, symbol: str, source: str = "VCI") -> str:
     if df.empty or len(df) < 2:
         return "Không đủ dữ liệu để phân tích."
 
@@ -65,6 +65,115 @@ def build_context(df: pd.DataFrame, symbol: str) -> str:
         )
     table_str = "\n".join(rows)
 
+    # 1. Fetch Fundamental Analysis (FA) data using KBS source (highly detailed ratio endpoint)
+    fa_md = ""
+    try:
+        from vnstock import Finance
+        fin = Finance(symbol=symbol, source='KBS')
+        df_ratio = fin.ratio(period='year')
+        if df_ratio is not None and not df_ratio.empty:
+            period_cols = [c for c in df_ratio.columns if c not in ['item', 'item_id', 'item_en', 'unit', 'levels', 'row_number']]
+            year_cols = sorted([c for c in period_cols if any(char.isdigit() for char in c)], reverse=True)
+            if year_cols:
+                latest_p = year_cols[0]
+                
+                metrics_mapping = {
+                    'eps': 'trailing_eps',
+                    'pe': 'pe_ratio',
+                    'pb': 'pb_ratio',
+                    'beta': 'beta',
+                    'roe': 'roe',
+                    'roa': 'roa',
+                    'debt_to_equity': 'debt_to_equity',
+                    'debt_to_assets': 'debt_to_assets',
+                    'rev_growth': 'net_revenue',
+                    'profit_growth': 'profit_after_tax_for_shareholders_of_the_parent_company'
+                }
+                
+                extracted = {}
+                for key, item_id in metrics_mapping.items():
+                    row = df_ratio[df_ratio['item_id'] == item_id]
+                    if row.empty and key == 'profit_growth':
+                        row = df_ratio[df_ratio['item_id'] == 'profit_before_tax']
+                    
+                    if not row.empty:
+                        extracted[key] = row[latest_p].iloc[0]
+                    else:
+                        extracted[key] = None
+                
+                def format_val(val, suffix="", is_pct=False):
+                    if val is None or pd.isna(val):
+                        return "—"
+                    if isinstance(val, str):
+                        val = val.strip()
+                        if val.endswith('%'):
+                            val = val[:-1]
+                        try:
+                            val = float(val)
+                        except ValueError:
+                            return val
+                    
+                    float_val = float(val)
+                    if is_pct:
+                        return f"{float_val:+.2f}%" if float_val >= 0 else f"{float_val:.2f}%"
+                    if float_val >= 1000 or float_val <= -1000:
+                        return f"{float_val:,.0f}{suffix}"
+                    return f"{float_val:.2f}{suffix}"
+
+                fa_md = f"""
+## Chỉ số tài chính cơ bản ({latest_p.replace('-Năm', '')})
+- EPS: {format_val(extracted['eps'], ' VNĐ')} | P/E: {format_val(extracted['pe'], 'x')} | P/B: {format_val(extracted['pb'], 'x')}
+- ROE: {format_val(extracted['roe'], '%')} | ROA: {format_val(extracted['roa'], '%')} | Beta: {format_val(extracted['beta'])}
+- Nợ/Vốn chủ sở hữu: {format_val(extracted['debt_to_equity'], '%')} | Nợ/Tổng tài sản: {format_val(extracted['debt_to_assets'], '%')}
+- Tăng trưởng doanh thu YoY: {format_val(extracted['rev_growth'], '%', is_pct=True)}
+- Tăng trưởng lợi nhuận YoY: {format_val(extracted['profit_growth'], '%', is_pct=True)}
+"""
+    except Exception as e:
+        fa_md = f"\n## Chỉ số tài chính cơ bản\n(Không lấy được dữ liệu tài chính cơ bản: {str(e)})\n"
+
+    # 2. Fetch Foreign Trade/Flow data
+    foreign_md = ""
+    try:
+        from vnstock import Quote
+        q = Quote(symbol=symbol, source='VCI')
+        if hasattr(q, 'foreign_flow'):
+            ff_df = q.foreign_flow(limit=5)
+            if ff_df is not None and not ff_df.empty:
+                rows_ff = []
+                for _, r in ff_df.head(5).iterrows():
+                    rows_ff.append(f"- Ngày {r.get('date', '—')}: Ròng {r.get('net_value', 0):+,.0f} VNĐ (Mua: {r.get('buy_value', 0):,.0f} | Bán: {r.get('sell_value', 0):,.0f})")
+                foreign_md = "\n## Dòng tiền khối ngoại (5 phiên gần nhất)\n" + "\n".join(rows_ff) + "\n"
+    except Exception:
+        pass
+
+    if not foreign_md:
+        try:
+            from vnstock import Trading
+            trading = Trading(symbol=symbol, source='KBS')
+            board_df = trading.price_board(symbols_list=[symbol])
+            if board_df is not None and not board_df.empty:
+                buy_vol = board_df.get('foreign_buy_volume', pd.Series([None])).iloc[0]
+                sell_vol = board_df.get('foreign_sell_volume', pd.Series([None])).iloc[0]
+                if buy_vol is not None and sell_vol is not None and not (pd.isna(buy_vol) or pd.isna(sell_vol)):
+                    net_vol = buy_vol - sell_vol
+                    net_flow_vnd = ""
+                    close_price = board_df.get('close_price', pd.Series([None])).iloc[0] or board_df.get('reference_price', pd.Series([None])).iloc[0]
+                    if close_price:
+                        try:
+                            close_price = float(close_price)
+                            if 0 < close_price < 10000:
+                                close_price *= 1000
+                            net_flow_vnd = f" (~{net_vol * close_price / 1_000_000_000:+.2f} tỷ VNĐ)"
+                        except:
+                            pass
+                    foreign_md = f"""
+## Dòng tiền khối ngoại (Phiên gần nhất)
+- Khối ngoại Mua: {buy_vol:,.0f} cổ phiếu | Bán: {sell_vol:,.0f} cổ phiếu
+- Ròng: {net_vol:+,.0f} cổ phiếu{net_flow_vnd}
+"""
+        except Exception as e:
+            foreign_md = f"\n## Dòng tiền khối ngoại\n(Không lấy được dữ liệu dòng tiền khối ngoại: {str(e)})\n"
+
     ctx = f"""# Báo cáo phân tích kỹ thuật: {symbol}
 Kỳ phân tích: {df["time"].iloc[0].date()} → {df["time"].iloc[-1].date()} ({len(df)} phiên)
 
@@ -76,7 +185,7 @@ Kỳ phân tích: {df["time"].iloc[0].date()} → {df["time"].iloc[-1].date()} (
 ## Sinh lời
 - 5 phiên: {ret5:+.2f}% | 20 phiên: {ret20:+.2f}% | Toàn kỳ: {ret_all:+.2f}%
 - Win rate: {win_r:.1f}% | Volatility σ: {std:.2f}%
-
+{fa_md}{foreign_md}
 ## Chỉ báo kỹ thuật (phiên gần nhất)
 | Chỉ báo | Giá trị | Tín hiệu |
 |---------|---------|----------|
@@ -102,4 +211,5 @@ def get_ai_context(req: AIContextRequest):
     if df.empty:
         raise HTTPException(404, "No data")
     df = compute(df, req.params)
-    return {"symbol": sym, "context": build_context(df, sym)}
+    return {"symbol": sym, "context": build_context(df, sym, req.source)}
+
