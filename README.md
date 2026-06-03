@@ -1,13 +1,13 @@
-# 📈 VN Stock Tracker
+# VN Stock Tracker
 
 Nền tảng phân tích cổ phiếu Việt Nam tích hợp AI, xây dựng bằng **Next.js 16 + FastAPI + vnstock**.  
 Mỗi user tự quản lý API key cá nhân — không bottleneck, không hardcode.
 
-🌐 **Live:** https://vn-stock-tracker-swart.vercel.app
+**Live:** https://vn-stock-tracker-swart.vercel.app
 
 ---
 
-## ✨ Tính năng
+## Tính năng
 
 | Module | Nội dung |
 |---|---|
@@ -23,7 +23,7 @@ Mỗi user tự quản lý API key cá nhân — không bottleneck, không hardc
 
 ---
 
-## 🏗 Kiến trúc
+## Kiến trúc
 
 ```
 User Browser
@@ -46,7 +46,7 @@ vnstock library               ← Dữ liệu thị trường VN (user key)
 
 ---
 
-## 🔑 Cấu hình per-user 
+## Cấu hình per-user 
 
 | Setting | Mô tả |
 |---|---|
@@ -57,11 +57,11 @@ vnstock library               ← Dữ liệu thị trường VN (user key)
 | **Nguồn dữ liệu** | VCI hoặc KBS |
 | **Khung thời gian** | 1D / 1W / 1M |
 
-> ⚠️ **Vnstock API Key là bắt buộc** — mọi request không có key sẽ bị từ chối (401).
+> **Vnstock API Key là bắt buộc** — mọi request không có key sẽ bị từ chối (401).
 
 ---
 
-## 🤖 AI System Prompt
+## AI System Prompt
 
 Prompt AI được load theo thứ tự ưu tiên:
 
@@ -78,7 +78,7 @@ Prompt hỗ trợ placeholder động:
 
 ---
 
-## 🐳 Self-host với Docker (khuyến nghị)
+## Self-host với Docker (khuyến nghị)
 
 Cách đơn giản nhất để chạy trên máy hoặc VPS cá nhân — không cần cài Node, Python, hay PostgreSQL riêng lẻ.
 
@@ -112,9 +112,9 @@ docker compose --env-file .env.docker.local up -d --build
 docker compose ps
 ```
 
-Truy cập: **http://localhost:3000** 🎉
+Truy cập: **http://localhost:3000**
 
-> 💡 **Lưu ý về build tự động:** Quá trình build hoàn toàn tự đóng gói (self-contained). Bạn không cần chạy `npm install` hay `pip install` ở máy local trước khi chạy Docker Compose. Dịch vụ `migrate` sẽ sử dụng container builder để chạy prisma migration mà không phụ thuộc vào `node_modules` ở máy host.
+> **Lưu ý về build tự động:** Quá trình build hoàn toàn tự đóng gói (self-contained). Bạn không cần chạy `npm install` hay `pip install` ở máy local trước khi chạy Docker Compose. Dịch vụ `migrate` sẽ sử dụng container builder để chạy prisma migration mà không phụ thuộc vào `node_modules` ở máy host.
 
 ### Lần chạy sau (không cần build lại)
 
@@ -146,7 +146,7 @@ docker compose --env-file .env.docker.local up -d --build
 
 ---
 
-## 🚀 Cài đặt local (không Docker)
+## Cài đặt local (không Docker)
 
 ```bash
 # 1. Clone
@@ -176,7 +176,7 @@ Truy cập: http://localhost:3000
 
 ---
 
-## 🗄 Database (khi host local)
+## Database (khi host local)
 
 Dự án dùng **PostgreSQL** qua Prisma ORM. Có 3 lựa chọn:
 
@@ -205,7 +205,7 @@ npx prisma db push   # tạo bảng theo schema
 
 ---
 
-## 🌍 Environment Variables
+## Environment Variables
 
 | Biến | Bắt buộc | Mô tả |
 |---|---|---|
@@ -217,7 +217,7 @@ npx prisma db push   # tạo bảng theo schema
 
 ---
 
-## 📚 Nguồn dữ liệu
+## Nguồn dữ liệu
 
 | Nguồn | Mô tả |
 |---|---|
@@ -226,7 +226,7 @@ npx prisma db push   # tạo bảng theo schema
 
 ---
 
-## 📁 Kho mã nguồn liên quan
+## Kho mã nguồn liên quan
 
 Dự án tham khảo và tích hợp từ ba nguồn (lưu local tại `sources/`, không commit):
 
@@ -238,7 +238,7 @@ Dự án tham khảo và tích hợp từ ba nguồn (lưu local tại `sources/
 
 ---
 
-## ⚠️ Lưu ý
+## Lưu ý
 
 - Dữ liệu chỉ dùng cho mục đích nghiên cứu cá nhân
 - Không phải lời khuyến nghị đầu tư

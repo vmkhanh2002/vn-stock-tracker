@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react"
 import {
   createChart,
   CrosshairMode,
+  LineStyle,
   type IChartApi,
   type ISeriesApi,
 } from "lightweight-charts"
@@ -72,9 +73,9 @@ export function CandlestickChart({ data, height = 440, ma10, ma20, ma50, bbands 
       s.setData(lineData("ma50"))
     }
     if (bbands) {
-      const upper = chart.addLineSeries({ color: "#94a3b8", lineWidth: 1, lineStyle: 2, title: "BB Upper" })
+      const upper = chart.addLineSeries({ color: "#94a3b8", lineWidth: 1, lineStyle: LineStyle.Dashed, title: "BB Upper" })
       upper.setData(lineData("bbUpper"))
-      const lower = chart.addLineSeries({ color: "#94a3b8", lineWidth: 1, lineStyle: 2, title: "BB Lower" })
+      const lower = chart.addLineSeries({ color: "#94a3b8", lineWidth: 1, lineStyle: LineStyle.Dashed, title: "BB Lower" })
       lower.setData(lineData("bbLower"))
     }
 
