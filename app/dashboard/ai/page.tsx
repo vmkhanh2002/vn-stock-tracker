@@ -15,6 +15,15 @@ import type { Recommendation } from "@/types"
 
 const HORIZONS = ["Ngắn hạn (1-5 phiên)", "Trung hạn (1-3 tháng)", "Dài hạn (> 6 tháng)"]
 const RISKS    = ["Thấp (bảo thủ)", "Trung bình", "Cao (tích cực)"]
+const LOOKBACKS = [
+  { v: 30,  l: "30 phiên" },
+  { v: 60,  l: "60 phiên" },
+  { v: 90,  l: "90 phiên" },
+  { v: 120, l: "120 phiên" },
+  { v: 180, l: "180 phiên" },
+  { v: 240, l: "240 phiên" },
+  { v: 300, l: "300 phiên" },
+]
 
 function AnalyzePanel({ symbol }: { symbol: string }) {
   const [horizon, setHorizon] = useState(HORIZONS[0])
@@ -25,7 +34,9 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
   const [loading, setLoading] = useState(false)
   const [err,     setErr]     = useState("")
 
-  const start = dateNDaysAgo(180)
+  const [lookback, setLookback] = useState(180)
+
+  const start = dateNDaysAgo(lookback)
   const end   = today()
 
   const { data: ctxData, isLoading: ctxLoading } = useQuery({
@@ -67,7 +78,7 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
           <label className="mb-1.5 block text-xs font-medium text-slate-600">Khung đầu tư</label>
           <select
@@ -86,6 +97,16 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
           >
             {RISKS.map((r) => <option key={r}>{r}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-slate-600">Số phiên phân tích</label>
+          <select
+            value={lookback}
+            onChange={(e) => setLookback(Number(e.target.value))}
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+          >
+            {LOOKBACKS.map((l) => <option key={l.v} value={l.v}>{l.l}</option>)}
           </select>
         </div>
       </div>
@@ -131,6 +152,7 @@ function ScanPanel() {
   const [results, setResults] = useState<{ sym: string; rec: Recommendation; answer: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [err,     setErr]     = useState("")
+  const [lookback, setLookback] = useState(180)
 
   async function startScan() {
     const syms = input
@@ -143,7 +165,7 @@ function ScanPanel() {
     setResults([])
     setLoading(true)
     setErr("")
-    const start = dateNDaysAgo(180)
+    const start = dateNDaysAgo(lookback)
     const end   = today()
     for (const sym of syms) {
       try {
@@ -173,14 +195,21 @@ function ScanPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="VNM, FPT, VIC, ... (tối đa 10 mã)"
-          className="flex-1"
+          className="flex-1 min-w-[200px]"
         />
-        <Button onClick={startScan} disabled={loading}>
+        <select
+          value={lookback}
+          onChange={(e) => setLookback(Number(e.target.value))}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm h-10"
+        >
+          {LOOKBACKS.map((l) => <option key={l.v} value={l.v}>{l.l}</option>)}
+        </select>
+        <Button onClick={startScan} disabled={loading} className="h-10">
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
           Quét
         </Button>
