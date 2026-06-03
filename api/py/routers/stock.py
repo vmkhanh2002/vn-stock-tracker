@@ -82,8 +82,8 @@ class BoardRequest(BaseModel):
     @classmethod
     def validate_syms(cls, v):
         cleaned = [re.sub(r"[^A-Z0-9]", "", s.strip().upper()) for s in v if s.strip()]
-        if len(cleaned) > 50:
-            raise ValueError("Max 50 symbols per request")
+        if len(cleaned) > 150:
+            raise ValueError("Max 150 symbols per request")
         return cleaned
 
 
@@ -187,3 +187,15 @@ def get_board(req: BoardRequest):
         raise
     except Exception as exc:
         raise HTTPException(502, f"board error: {exc}\n{traceback.format_exc()}")
+
+
+@router.get("/group-symbols")
+def get_group_symbols(group: str = Query("VN30")):
+    try:
+        from routers.screener import get_group_symbols as fetch_symbols
+        symbols = fetch_symbols(group)
+        # Giới hạn tối đa 150 mã để khớp với giới hạn của Board API
+        return {"group": group, "symbols": symbols[:150], "count": len(symbols[:150])}
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching group symbols: {str(e)}")
+
