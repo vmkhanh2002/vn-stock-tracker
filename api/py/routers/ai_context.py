@@ -87,7 +87,13 @@ def build_context(df: pd.DataFrame, symbol: str, source: str = "VCI") -> str:
                     'debt_to_equity': 'debt_to_equity',
                     'debt_to_assets': 'debt_to_assets',
                     'rev_growth': 'net_revenue',
-                    'profit_growth': 'profit_after_tax_for_shareholders_of_the_parent_company'
+                    'profit_growth': 'profit_after_tax_for_shareholders_of_the_parent_company',
+                    'gross_margin': 'gross_margin',
+                    'net_margin': 'net_margin',
+                    'short_term_ratio': 'short_term_ratio',
+                    'quick_ratio': 'quick_ratio',
+                    'interest_coverage': 'interest_coverage',
+                    'dividend_yield': 'dividend_yield'
                 }
                 
                 extracted = {}
@@ -124,6 +130,9 @@ def build_context(df: pd.DataFrame, symbol: str, source: str = "VCI") -> str:
 ## Chỉ số tài chính cơ bản ({latest_p.replace('-Năm', '')})
 - EPS: {format_val(extracted['eps'], ' VNĐ')} | P/E: {format_val(extracted['pe'], 'x')} | P/B: {format_val(extracted['pb'], 'x')}
 - ROE: {format_val(extracted['roe'], '%')} | ROA: {format_val(extracted['roa'], '%')} | Beta: {format_val(extracted['beta'])}
+- Biên LN gộp: {format_val(extracted['gross_margin'], '%')} | Biên LN ròng: {format_val(extracted['net_margin'], '%')}
+- Khả năng thanh toán hiện hành: {format_val(extracted['short_term_ratio'], 'x')} | Thanh toán nhanh: {format_val(extracted['quick_ratio'], 'x')}
+- Khả năng trả lãi vay (Interest Coverage): {format_val(extracted['interest_coverage'], 'x')} | Tỷ suất cổ tức: {format_val(extracted['dividend_yield'], '%')}
 - Nợ/Vốn chủ sở hữu: {format_val(extracted['debt_to_equity'], '%')} | Nợ/Tổng tài sản: {format_val(extracted['debt_to_assets'], '%')}
 - Tăng trưởng doanh thu YoY: {format_val(extracted['rev_growth'], '%', is_pct=True)}
 - Tăng trưởng lợi nhuận YoY: {format_val(extracted['profit_growth'], '%', is_pct=True)}

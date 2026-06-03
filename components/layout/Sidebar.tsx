@@ -1,13 +1,14 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart2, GitCompare, Activity, BrainCircuit, Bell, Settings, TrendingUp } from "lucide-react"
+import { BarChart2, GitCompare, Activity, BrainCircuit, Bell, Settings, TrendingUp, SlidersHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/dashboard/lookup",   label: "Tra cứu mã",       icon: BarChart2 },
   { href: "/dashboard/compare",  label: "So sánh mã",       icon: GitCompare },
   { href: "/dashboard/realtime", label: "Realtime & Heatmap",icon: Activity },
+  { href: "/dashboard/screener", label: "Bộ lọc cổ phiếu",   icon: SlidersHorizontal },
   { href: "/dashboard/ai",       label: "AI Khuyến nghị",   icon: BrainCircuit },
   { href: "/dashboard/watchlist",label: "Watchlist & Cảnh báo",icon: Bell },
   { href: "/dashboard/settings", label: "Cài đặt",          icon: Settings },

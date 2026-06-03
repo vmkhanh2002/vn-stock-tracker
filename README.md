@@ -13,6 +13,7 @@ Mỗi user tự quản lý API key cá nhân — không bottleneck, không hardc
 |---|---|
 | **Tra cứu 1 mã** | OHLCV, biểu đồ nến, MA10/20/50, Bollinger Bands, tín hiệu kỹ thuật tự động |
 | **Bảng giá thời gian thực** | Nhiều mã cùng lúc + so sánh tỷ suất tích lũy |
+| **Bộ lọc cổ phiếu** | Quét & lọc mã theo sàn, rổ chỉ số kèm chỉ số FA (P/E, P/B, ROE) và biến động kỹ thuật realtime |
 | **AI Khuyến nghị** | GPT phân tích TA + FA theo khung đầu tư (ngắn/trung/dài hạn) |
 | **Chỉ số cơ bản (FA)** | EPS, P/E, P/B, ROE, ROA, Debt/Equity, tăng trưởng YoY |
 | **Dòng tiền khối ngoại** | Mua/bán ròng theo phiên gần nhất |

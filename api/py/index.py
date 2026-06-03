@@ -63,10 +63,12 @@ async def add_vnstock_key_middleware(request, call_next):
 from routers.stock import router as stock_router
 from routers.indicators import router as ind_router
 from routers.ai_context import router as ai_router
+from routers.screener import router as screener_router
 
 app.include_router(stock_router, prefix="/stock")
 app.include_router(ind_router,   prefix="/indicators")
 app.include_router(ai_router,    prefix="/ai-context")
+app.include_router(screener_router, prefix="/screener")
 
 
 @app.get("/health")

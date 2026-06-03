@@ -1,4 +1,4 @@
-import type { OHLCVRow, IndicatorRequest, AIContextRequest, BoardRow } from "@/types"
+import type { OHLCVRow, IndicatorRequest, AIContextRequest, BoardRow, ScreenerRow } from "@/types"
 
 const PY_BASE = "/api/py"
 
@@ -47,6 +47,25 @@ export async function fetchAIContext(
   body: AIContextRequest
 ): Promise<{ symbol: string; context: string }> {
   return apiFetch(`${PY_BASE}/ai-context`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+}
+
+export async function fetchScreener(body: {
+  group: string
+  peMin?: number | null
+  peMax?: number | null
+  pbMin?: number | null
+  pbMax?: number | null
+  roeMin?: number | null
+  roaMin?: number | null
+  pctChangeMin?: number | null
+  pctChangeMax?: number | null
+  volumeMin?: number | null
+}): Promise<ScreenerRow[]> {
+  return apiFetch(`${PY_BASE}/screener`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

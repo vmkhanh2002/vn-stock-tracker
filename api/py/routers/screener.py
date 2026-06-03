@@ -1,0 +1,266 @@
+import os
+import json
+import time
+import tempfile
+import pandas as pd
+import numpy as np
+from concurrent.futures import ThreadPoolExecutor
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
+from vnstock import Listing, Trading, Finance
+
+router = APIRouter()
+
+class ScreenerRequest(BaseModel):
+    group:          str = "VN30" # VN30, HNX30, VN100, VNMidCap, VNSmallCap, HOSE, HNX, UPCOM
+    peMin:          Optional[float] = None
+    peMax:          Optional[float] = None
+    pbMin:          Optional[float] = None
+    pbMax:          Optional[float] = None
+    roeMin:         Optional[float] = None
+    roaMin:         Optional[float] = None
+    pctChangeMin:   Optional[float] = None
+    pctChangeMax:   Optional[float] = None
+    volumeMin:      Optional[float] = None
+
+# Cấu hình cache
+CACHE_DIR = os.path.join(tempfile.gettempdir(), "vnstock_screener_cache")
+CACHE_TTL = 43200  # 12 giờ (giây)
+
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+def get_cache_path(group: str) -> str:
+    return os.path.join(CACHE_DIR, f"screener_{group.upper()}.json")
+
+def get_group_symbols(group: str) -> List[str]:
+    l = Listing()
+    group_upper = group.strip().upper()
+    
+    # 1. Nếu là rổ sàn HOSE/HNX/UPCOM
+    if group_upper in ["HOSE", "HNX", "UPCOM"]:
+        try:
+            df = l.symbols_by_exchange(group_upper)
+            if df is not None and not df.empty:
+                # Lấy tối đa 150 mã có thông tin để tránh rate limit lúc kéo FA
+                # Sắp xếp theo giá tham chiếu giảm dần để lấy các mã lớn trước
+                if 're' in df.columns:
+                    df = df.sort_values(by='re', ascending=False)
+                symbols = df['symbol'].tolist()
+                return symbols[:150]
+        except Exception:
+            pass
+            
+    # 2. Nếu là rổ chỉ số VN30/HNX30/VN100/VNMidCap...
+    try:
+        # symbols_by_group trả về pandas Series chứa danh sách mã
+        res = l.symbols_by_group(group_upper)
+        if res is not None and not res.empty:
+            return res.tolist()
+    except Exception:
+        pass
+        
+    # Fallback nếu lỗi hoặc rổ lạ
+    try:
+        df = l.symbols_by_group("VN30")
+        if df is not None and not df.empty:
+            return df.tolist()
+    except Exception:
+        pass
+        
+    return ["FPT", "HPG", "SSI", "VCB", "VIC", "VNM", "MSN", "MWG", "TCB", "VHM"]
+
+def fetch_one_ratio(sym: str):
+    """Kéo dữ liệu tài chính (FA) cho 1 mã"""
+    try:
+        fin = Finance(symbol=sym, source='KBS')
+        df_ratio = fin.ratio(period='year')
+        if df_ratio is not None and not df_ratio.empty:
+            period_cols = [c for c in df_ratio.columns if c not in ['item', 'item_id', 'item_en', 'unit', 'levels', 'row_number']]
+            year_cols = sorted([c for c in period_cols if any(char.isdigit() for char in c)], reverse=True)
+            if year_cols:
+                latest_p = year_cols[0]
+                
+                # Trích xuất an toàn các chỉ số
+                def get_val(item_id):
+                    row = df_ratio[df_ratio['item_id'] == item_id]
+                    if not row.empty:
+                        val = row[latest_p].iloc[0]
+                        if val is not None and not pd.isna(val):
+                            try:
+                                return float(val)
+                            except:
+                                return None
+                    return None
+
+                return sym, {
+                    'organ_name': str(df_ratio.get('organ_name', pd.Series([''])).iloc[0] or ''),
+                    'pe': get_val('pe_ratio'),
+                    'pb': get_val('pb_ratio'),
+                    'roe': get_val('roe'),
+                    'roa': get_val('roa'),
+                    'debt_to_equity': get_val('debt_to_equity'),
+                    'debt_to_assets': get_val('debt_to_assets'),
+                    'rev_growth': get_val('net_revenue'),
+                    'profit_growth': get_val('profit_after_tax_for_shareholders_of_the_parent_company')
+                }
+    except Exception:
+        pass
+    return sym, None
+
+def get_base_data(group: str) -> List[dict]:
+    cache_path = get_cache_path(group)
+    now = time.time()
+    
+    # Đọc từ cache nếu hợp lệ
+    if os.path.exists(cache_path):
+        try:
+            mtime = os.path.getmtime(cache_path)
+            if now - mtime < CACHE_TTL:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+        except Exception:
+            pass
+            
+    # Lấy danh sách mã mới
+    symbols = get_group_symbols(group)
+    if not symbols:
+        return []
+        
+    fa_data = {}
+    
+    # Kéo song song tỉ số tài chính
+    # Vì rate limit, giới hạn số thread và sử dụng delay nhẹ nếu số mã lớn
+    max_workers = 10 if len(symbols) <= 50 else 5
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Nếu danh sách lớn, chèn delay nhỏ để tránh rate limit
+        if len(symbols) > 50:
+            futures = []
+            for i, sym in enumerate(symbols):
+                futures.append(executor.submit(fetch_one_ratio, sym))
+                if i % 10 == 0:
+                    time.sleep(0.5)
+            results = [f.result() for f in futures]
+        else:
+            results = list(executor.map(fetch_one_ratio, symbols))
+            
+    for sym, data in results:
+        if data:
+            fa_data[sym] = data
+            
+    # Lấy thông tin giá realtime hàng loạt qua price_board (chỉ tốn 1 request)
+    realtime_data = {}
+    try:
+        t = Trading()
+        # price_board hỗ trợ truyền list
+        df_board = t.price_board(symbols_list=symbols)
+        if df_board is not None and not df_board.empty:
+            for _, r in df_board.iterrows():
+                sym = r.get('symbol')
+                if not sym:
+                    continue
+                
+                # Trích xuất thông tin
+                close_price = r.get('close_price') or r.get('reference_price')
+                pct_chg = r.get('percent_change') or 0.0
+                vol = r.get('volume_accumulated') or 0.0
+                foreign_buy = r.get('foreign_buy_volume') or 0.0
+                foreign_sell = r.get('foreign_sell_volume') or 0.0
+                
+                realtime_data[sym] = {
+                    'price': float(close_price) if close_price else 0.0,
+                    'pct_change': float(pct_chg),
+                    'volume': float(vol),
+                    'foreign_buy': float(foreign_buy),
+                    'foreign_sell': float(foreign_sell),
+                    'foreign_net': float(foreign_buy - foreign_sell),
+                    'exchange': str(r.get('exchange', ''))
+                }
+    except Exception:
+        pass
+
+    # Gộp dữ liệu
+    merged = []
+    for sym in symbols:
+        # Dữ liệu mặc định
+        item = {
+            'symbol': sym,
+            'organ_name': '',
+            'price': 0.0,
+            'pct_change': 0.0,
+            'volume': 0.0,
+            'foreign_buy': 0.0,
+            'foreign_sell': 0.0,
+            'foreign_net': 0.0,
+            'exchange': '',
+            'pe': None,
+            'pb': None,
+            'roe': None,
+            'roa': None,
+            'debt_to_equity': None,
+            'debt_to_assets': None,
+            'rev_growth': None,
+            'profit_growth': None
+        }
+        
+        # Điền FA
+        if sym in fa_data:
+            item.update(fa_data[sym])
+            
+        # Điền Realtime
+        if sym in realtime_data:
+            item.update(realtime_data[sym])
+            
+        merged.append(item)
+        
+    # Ghi vào cache
+    try:
+        with open(cache_path, "w", encoding="utf-8") as f:
+            json.dump(merged, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+        
+    return merged
+
+@router.post("")
+def run_screener(req: ScreenerRequest):
+    data = get_base_data(req.group)
+    if not data:
+        return []
+        
+    filtered = []
+    for r in data:
+        # 1. Lọc PE
+        if req.peMin is not None and (r['pe'] is None or r['pe'] < req.peMin):
+            continue
+        if req.peMax is not None and (r['pe'] is None or r['pe'] > req.peMax):
+            continue
+            
+        # 2. Lọc PB
+        if req.pbMin is not None and (r['pb'] is None or r['pb'] < req.pbMin):
+            continue
+        if req.pbMax is not None and (r['pb'] is None or r['pb'] > req.pbMax):
+            continue
+            
+        # 3. Lọc ROE
+        if req.roeMin is not None and (r['roe'] is None or r['roe'] < req.roeMin):
+            continue
+            
+        # 4. Lọc ROA
+        if req.roaMin is not None and (r['roa'] is None or r['roa'] < req.roaMin):
+            continue
+            
+        # 5. Lọc % thay đổi giá
+        if req.pctChangeMin is not None and r['pct_change'] < req.pctChangeMin:
+            continue
+        if req.pctChangeMax is not None and r['pct_change'] > req.pctChangeMax:
+            continue
+            
+        # 6. Lọc khối lượng
+        if req.volumeMin is not None and r['volume'] < req.volumeMin:
+            continue
+            
+        filtered.append(r)
+        
+    return filtered

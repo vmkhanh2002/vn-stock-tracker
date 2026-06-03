@@ -69,3 +69,24 @@ export interface BoardRow {
 }
 
 export type Recommendation = "MUA" | "BAN" | "GIU"
+
+export interface ScreenerRow {
+  symbol: string
+  organ_name: string
+  price: number
+  pct_change: number
+  volume: number
+  foreign_buy: number
+  foreign_sell: number
+  foreign_net: number
+  exchange: string
+  pe: number | null
+  pb: number | null
+  roe: number | null
+  roa: number | null
+  debt_to_equity: number | null
+  debt_to_assets: number | null
+  rev_growth: number | null
+  profit_growth: number | null
+}
+
