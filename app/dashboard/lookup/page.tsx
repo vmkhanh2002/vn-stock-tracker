@@ -307,10 +307,12 @@ export default function LookupPage() {
                 <input
                   type="number"
                   min={5}
-                  max={rows.length}
+                  max={Math.min(300, rows.length)}
                   value={tableLimit}
                   onChange={(e) => {
-                    const v = Number(e.target.value)
+                    let v = Number(e.target.value)
+                    const maxVal = Math.min(300, rows.length)
+                    if (v > maxVal) v = maxVal
                     if (v > 0) setTableLimit(v)
                   }}
                   className="w-14 rounded-md border border-slate-200 px-1.5 py-1 text-center font-mono text-xs font-semibold focus:border-blue-500 focus:outline-none"
