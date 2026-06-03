@@ -113,6 +113,8 @@ docker compose ps
 
 Truy cập: **http://localhost:3000** 🎉
 
+> 💡 **Lưu ý về build tự động:** Quá trình build hoàn toàn tự đóng gói (self-contained). Bạn không cần chạy `npm install` hay `pip install` ở máy local trước khi chạy Docker Compose. Dịch vụ `migrate` sẽ sử dụng container builder để chạy prisma migration mà không phụ thuộc vào `node_modules` ở máy host.
+
 ### Lần chạy sau (không cần build lại)
 
 ```bash
