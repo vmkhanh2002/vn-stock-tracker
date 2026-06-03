@@ -206,11 +206,23 @@ def fetch_one_ratio(sym: str):
         pass
     return sym, None
 
+def clean_nan(val):
+    if isinstance(val, list):
+        return [clean_nan(x) for x in val]
+    if isinstance(val, dict):
+        return {k: clean_nan(v) for k, v in val.items()}
+    if isinstance(val, (float, np.floating)):
+        if np.isnan(val) or np.isinf(val):
+            return None
+    elif val is None or pd.isna(val):
+        return None
+    return val
+
 def get_base_data(group: str) -> List[dict]:
     # 1. Thử đọc từ cache của Turso Cloud trước
     turso_cache = get_screener_cache_from_turso(group)
     if turso_cache is not None:
-        return turso_cache
+        return clean_nan(turso_cache)
 
     # 2. Fallback: Đọc từ cache tệp cục bộ /tmp
     cache_path = get_cache_path(group)
@@ -221,7 +233,7 @@ def get_base_data(group: str) -> List[dict]:
             mtime = os.path.getmtime(cache_path)
             if now - mtime < CACHE_TTL:
                 with open(cache_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    return clean_nan(json.load(f))
         except Exception:
             pass
             
@@ -316,17 +328,19 @@ def get_base_data(group: str) -> List[dict]:
             
         merged.append(item)
         
+    cleaned_merged = clean_nan(merged)
+
     # Ghi vào cache Turso Cloud
-    save_screener_cache_to_turso(group, merged)
+    save_screener_cache_to_turso(group, cleaned_merged)
 
     # Ghi vào cache tệp cục bộ làm dự phòng
     try:
         with open(cache_path, "w", encoding="utf-8") as f:
-            json.dump(merged, f, ensure_ascii=False, indent=2)
+            json.dump(cleaned_merged, f, ensure_ascii=False, indent=2)
     except Exception:
         pass
         
-    return merged
+    return cleaned_merged
 
 @router.post("")
 def run_screener(req: ScreenerRequest):

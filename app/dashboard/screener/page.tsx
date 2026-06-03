@@ -428,22 +428,22 @@ export default function ScreenerPage() {
 
                         {/* 7. PE */}
                         <td className="py-3 px-4 text-right text-slate-700 font-medium">
-                          {r.pe !== null ? `${r.pe.toFixed(2)}x` : "—"}
+                          {typeof r.pe === "number" ? `${r.pe.toFixed(2)}x` : "—"}
                         </td>
 
                         {/* 8. PB */}
                         <td className="py-3 px-4 text-right text-slate-700 font-medium">
-                          {r.pb !== null ? `${r.pb.toFixed(2)}x` : "—"}
+                          {typeof r.pb === "number" ? `${r.pb.toFixed(2)}x` : "—"}
                         </td>
 
                         {/* 9. ROE */}
-                        <td className={`py-3 px-4 text-right font-semibold ${r.roe && r.roe >= 20 ? "text-emerald-700" : "text-slate-700"}`}>
-                          {r.roe !== null ? `${r.roe.toFixed(2)}%` : "—"}
+                        <td className={`py-3 px-4 text-right font-semibold ${typeof r.roe === "number" && r.roe >= 20 ? "text-emerald-700" : "text-slate-700"}`}>
+                          {typeof r.roe === "number" ? `${r.roe.toFixed(2)}%` : "—"}
                         </td>
 
                         {/* 10. ROA */}
                         <td className="py-3 px-4 text-right text-slate-700">
-                          {r.roa !== null ? `${r.roa.toFixed(2)}%` : "—"}
+                          {typeof r.roa === "number" ? `${r.roa.toFixed(2)}%` : "—"}
                         </td>
 
                         {/* 11. Các nút Action */}
