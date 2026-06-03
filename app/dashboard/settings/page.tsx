@@ -135,7 +135,7 @@ export default function SettingsPage() {
                   <span className="text-sm text-green-700">Vnstock Key đã được cấu hình</span>
                 </>
               ) : (
-                <span className="text-sm text-slate-500">Sử dụng key mặc định của hệ thống</span>
+                <span className="text-sm text-amber-700">⚠️ Chưa có Vnstock Key — dữ liệu chứng khoán sẽ không hoạt động</span>
               )}
             </div>
             <div className="space-y-1.5">

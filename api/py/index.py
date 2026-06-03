@@ -35,9 +35,21 @@ app.add_middleware(
 
 @app.middleware("http")
 async def add_vnstock_key_middleware(request, call_next):
+    # Exempt health check endpoint
+    path = request.url.path.replace("/api/py", "")
+    exempt = path in ("/health", "/", "") or path.startswith("/docs") or path.startswith("/openapi")
+
     key = request.headers.get("x-vnstock-api-key") or request.headers.get("X-Vnstock-Api-Key")
     if not key:
         key = request.cookies.get("vnstock_api_key")
+
+    if not key and not exempt:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=401,
+            content={"error": "Vnstock API Key là bắt buộc. Vui lòng thêm key cá nhân tại Settings."}
+        )
+
     if key:
         os.environ["VNSTOCK_API_KEY"] = key
         try:
@@ -46,6 +58,7 @@ async def add_vnstock_key_middleware(request, call_next):
         except Exception:
             pass
     return await call_next(request)
+
 
 from routers.stock import router as stock_router
 from routers.indicators import router as ind_router
