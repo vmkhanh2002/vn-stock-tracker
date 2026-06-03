@@ -2,6 +2,7 @@ import os
 import json
 import time
 import tempfile
+import httpx
 import pandas as pd
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
@@ -12,6 +13,102 @@ from pydantic import BaseModel
 from vnstock import Listing, Trading, Finance
 
 router = APIRouter()
+
+# Helper function to get Turso Pipeline URL
+def get_turso_pipeline_url() -> Optional[str]:
+    db_url = os.environ.get("TURSO_DATABASE_URL")
+    if not db_url:
+        return None
+    if db_url.startswith("libsql://"):
+        db_url = db_url.replace("libsql://", "https://")
+    if not db_url.endswith("/v2/pipeline"):
+        db_url = db_url.rstrip("/") + "/v2/pipeline"
+    return db_url
+
+# Helper function to get cache from Turso
+def get_screener_cache_from_turso(group: str) -> Optional[List[dict]]:
+    db_url = get_turso_pipeline_url()
+    auth_token = os.environ.get("TURSO_AUTH_TOKEN")
+    if not db_url or not auth_token:
+        return None
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "requests": [
+            {
+                "type": "execute",
+                "stmt": {
+                    "sql": 'SELECT "data", "updated_at" FROM screener_cache WHERE "group" = ?;',
+                    "args": [{"type": "text", "value": group.upper()}]
+                }
+            },
+            {"type": "close"}
+        ]
+    }
+    
+    try:
+        with httpx.Client() as client:
+            resp = client.post(db_url, json=payload, headers=headers, timeout=5.0)
+            if resp.status_code == 200:
+                res_json = resp.json()
+                results = res_json.get("results", [])
+                if results and results[0].get("type") == "ok":
+                    exec_res = results[0]["response"]["result"]
+                    rows = exec_res.get("rows", [])
+                    if rows:
+                        row = rows[0]
+                        data_str = row[0]["value"]
+                        updated_at = int(row[1]["value"])
+                        
+                        # Validate TTL
+                        if time.time() - updated_at < CACHE_TTL:
+                            return json.loads(data_str)
+    except Exception as e:
+        # Fail silently
+        print(f"Error reading from Turso cache: {e}")
+    return None
+
+# Helper function to save cache to Turso
+def save_screener_cache_to_turso(group: str, data: List[dict]) -> bool:
+    db_url = get_turso_pipeline_url()
+    auth_token = os.environ.get("TURSO_AUTH_TOKEN")
+    if not db_url or not auth_token:
+        return False
+    
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
+    }
+    data_str = json.dumps(data, ensure_ascii=False)
+    updated_at = int(time.time())
+    
+    payload = {
+        "requests": [
+            {
+                "type": "execute",
+                "stmt": {
+                    "sql": 'INSERT OR REPLACE INTO screener_cache ("group", "data", "updated_at") VALUES (?, ?, ?);',
+                    "args": [
+                        {"type": "text", "value": group.upper()},
+                        {"type": "text", "value": data_str},
+                        {"type": "integer", "value": str(updated_at)}
+                    ]
+                }
+            },
+            {"type": "close"}
+        ]
+    }
+    
+    try:
+        with httpx.Client() as client:
+            resp = client.post(db_url, json=payload, headers=headers, timeout=5.0)
+            return resp.status_code == 200
+    except Exception as e:
+        print(f"Error saving to Turso cache: {e}")
+        return False
 
 class ScreenerRequest(BaseModel):
     group:          str = "VN30" # VN30, HNX30, VN100, VNMidCap, VNSmallCap, HOSE, HNX, UPCOM
@@ -110,10 +207,15 @@ def fetch_one_ratio(sym: str):
     return sym, None
 
 def get_base_data(group: str) -> List[dict]:
+    # 1. Thử đọc từ cache của Turso Cloud trước
+    turso_cache = get_screener_cache_from_turso(group)
+    if turso_cache is not None:
+        return turso_cache
+
+    # 2. Fallback: Đọc từ cache tệp cục bộ /tmp
     cache_path = get_cache_path(group)
     now = time.time()
     
-    # Đọc từ cache nếu hợp lệ
     if os.path.exists(cache_path):
         try:
             mtime = os.path.getmtime(cache_path)
@@ -214,7 +316,10 @@ def get_base_data(group: str) -> List[dict]:
             
         merged.append(item)
         
-    # Ghi vào cache
+    # Ghi vào cache Turso Cloud
+    save_screener_cache_to_turso(group, merged)
+
+    # Ghi vào cache tệp cục bộ làm dự phòng
     try:
         with open(cache_path, "w", encoding="utf-8") as f:
             json.dump(merged, f, ensure_ascii=False, indent=2)
