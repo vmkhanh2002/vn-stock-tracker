@@ -80,6 +80,8 @@ export function CandlestickChart({ data, height = 440, ma10, ma20, ma50, bbands 
     if (bbands) {
       const upper = chart.addLineSeries({ color: "#94a3b8", lineWidth: 1, title: "BB Upper" })
       upper.setData(lineData("bbUpper"))
+      const mid = chart.addLineSeries({ color: "#64748b", lineWidth: 1, title: "BB Mid" })
+      mid.setData(lineData("bbMid"))
       const lower = chart.addLineSeries({ color: "#94a3b8", lineWidth: 1, title: "BB Lower" })
       lower.setData(lineData("bbLower"))
     }

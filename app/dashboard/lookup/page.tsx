@@ -80,8 +80,10 @@ export default function LookupPage() {
   const [source, setSource]   = useState<"VCI" | "KBS">("VCI")
   const [interval, setIv]     = useState("1D")
   const [lookback, setLookback] = useState(180)
-  const [showMA, setShowMA]   = useState(true)
-  const [showBB, setShowBB]   = useState(false)
+  const [showMA10, setShowMA10] = useState(true)
+  const [showMA20, setShowMA20] = useState(true)
+  const [showMA50, setShowMA50] = useState(true)
+  const [showBB, setShowBB]     = useState(false)
   const [tableLimit, setTableLimit] = useState(30)
 
   const start = dateNDaysAgo(lookback)
@@ -236,7 +238,9 @@ export default function LookupPage() {
           <div className="flex items-center gap-2 text-xs">
             <span className="text-slate-500 font-medium">Overlay:</span>
             {[
-              { label: "MA", active: showMA, toggle: () => setShowMA((v) => !v) },
+              { label: "MA10", active: showMA10, toggle: () => setShowMA10((v) => !v) },
+              { label: "MA20", active: showMA20, toggle: () => setShowMA20((v) => !v) },
+              { label: "MA50", active: showMA50, toggle: () => setShowMA50((v) => !v) },
               { label: "BB", active: showBB, toggle: () => setShowBB((v) => !v) },
             ].map(({ label, active, toggle }) => (
               <button
@@ -267,9 +271,9 @@ export default function LookupPage() {
               <CandlestickChart
                 data={rows}
                 height={420}
-                ma10={showMA}
-                ma20={showMA}
-                ma50={showMA}
+                ma10={showMA10}
+                ma20={showMA20}
+                ma50={showMA50}
                 bbands={showBB}
               />
               <div className="mt-2">
