@@ -82,6 +82,7 @@ export default function LookupPage() {
   const [lookback, setLookback] = useState(180)
   const [showMA, setShowMA]   = useState(true)
   const [showBB, setShowBB]   = useState(false)
+  const [tableLimit, setTableLimit] = useState(30)
 
   const start = dateNDaysAgo(lookback)
   const end   = today()
@@ -299,8 +300,23 @@ export default function LookupPage() {
 
           {/* Data Table */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Lịch sử giao dịch (30 phiên gần nhất)</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-semibold">Lịch sử giao dịch</CardTitle>
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span>Hiển thị</span>
+                <input
+                  type="number"
+                  min={5}
+                  max={rows.length}
+                  value={tableLimit}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    if (v > 0) setTableLimit(v)
+                  }}
+                  className="w-14 rounded-md border border-slate-200 px-1.5 py-1 text-center font-mono text-xs font-semibold focus:border-blue-500 focus:outline-none"
+                />
+                <span>phiên gần nhất</span>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -316,7 +332,7 @@ export default function LookupPage() {
                   </thead>
                   <tbody>
                     {rows
-                      .slice(-30)
+                      .slice(-tableLimit)
                       .reverse()
                       .map((r, i) => {
                         const pct = r.returnPct ?? 0
