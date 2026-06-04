@@ -4,8 +4,10 @@ import { Users, BrainCircuit, Bell, Activity, Loader2 } from "lucide-react"
 import { trpc } from "@/lib/trpc/client"
 import { KPICard } from "@/components/dashboard/KPICard"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 export default function AdminPage() {
+  const { t, language } = useLanguage()
   const { data: stats, isLoading } = trpc.aiUsage.adminStats.useQuery()
 
   const { data: health } = useQuery({
@@ -25,30 +27,36 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-lg font-semibold text-slate-900">Admin Dashboard</h1>
+      <h1 className="text-lg font-semibold text-slate-900">
+        {language === "vi" ? "Trang quản trị" : "Admin Dashboard"}
+      </h1>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <KPICard label="Total Users" value={String(stats?.totalUsers ?? "—")} icon={<Users className="h-4 w-4" />} />
-        <KPICard label="AI Calls Today" value={String(stats?.totalToday ?? "—")} icon={<BrainCircuit className="h-4 w-4" />} />
-        <KPICard label="Python API" value={health?.status === "ok" ? "Online" : "Offline"} trend={health?.status === "ok" ? "up" : "down"} icon={<Activity className="h-4 w-4" />} />
-        <KPICard label="DB Date" value={health?.date ?? "—"} />
+        <KPICard label={t("admin.totalUsers")} value={String(stats?.totalUsers ?? "—")} icon={<Users className="h-4 w-4" />} />
+        <KPICard label={language === "vi" ? "Số cuộc gọi AI hôm nay" : "AI Calls Today"} value={String(stats?.totalToday ?? "—")} icon={<BrainCircuit className="h-4 w-4" />} />
+        <KPICard label="Python API" value={health?.status === "ok" ? (language === "vi" ? "Hoạt động" : "Online") : (language === "vi" ? "Ngoại tuyến" : "Offline")} trend={health?.status === "ok" ? "up" : "down"} icon={<Activity className="h-4 w-4" />} />
+        <KPICard label={language === "vi" ? "Ngày DB" : "DB Date"} value={health?.date ?? "—"} />
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm">AI Recommendation Distribution (all time)</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-sm">
+            {language === "vi" ? "Phân bổ khuyến nghị AI (toàn thời gian)" : "AI Recommendation Distribution (all time)"}
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <div className="flex gap-6">
             <div className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-green-500" />
-              <span className="text-sm">BUY: <b>{mua}</b></span>
+              <span className="text-sm">{language === "vi" ? "MUA" : "BUY"}: <b>{mua}</b></span>
             </div>
             <div className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-red-500" />
-              <span className="text-sm">SELL: <b>{ban}</b></span>
+              <span className="text-sm">{language === "vi" ? "BÁN" : "SELL"}: <b>{ban}</b></span>
             </div>
             <div className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-amber-500" />
-              <span className="text-sm">HOLD: <b>{giu}</b></span>
+              <span className="text-sm">{language === "vi" ? "NẮM GIỮ" : "HOLD"}: <b>{giu}</b></span>
             </div>
           </div>
         </CardContent>

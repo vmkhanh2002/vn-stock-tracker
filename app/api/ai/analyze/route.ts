@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { context, question, horizon, risk, symbol, mode } = await req.json()
+  const { context, question, horizon, risk, symbol, mode, lang } = await req.json()
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -31,14 +31,17 @@ export async function POST(req: Request) {
   if (user.aiSystemPrompt?.trim()) {
     rawPrompt = user.aiSystemPrompt.trim()
   } else {
-    const defaultPromptPath = path.join(process.cwd(), "lib", "default-system-prompt.txt")
+    const isVi = lang === "vi"
+    const filename = isVi ? "default-system-prompt.vi.txt" : "default-system-prompt.txt"
+    const defaultPromptPath = path.join(process.cwd(), "lib", filename)
     rawPrompt = await readFile(defaultPromptPath, "utf-8")
   }
 
   // Inject dynamic variables into prompt
+  const isVietnamese = lang === "vi"
   const systemPrompt = rawPrompt
-    .replace(/\{horizon\}/g, horizon ?? "ngắn hạn")
-    .replace(/\{risk\}/g, risk ?? "trung bình")
+    .replace(/\{horizon\}/g, horizon ?? (isVietnamese ? "ngắn hạn" : "short-term"))
+    .replace(/\{risk\}/g, risk ?? (isVietnamese ? "trung bình" : "medium"))
 
   const userPrompt = `${context}\n\n---\nCâu hỏi: ${question ?? `Phân tích kỹ thuật ${symbol} và cho khuyến nghị.`}`
 

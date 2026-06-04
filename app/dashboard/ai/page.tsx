@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { BrainCircuit, Loader2, Search, ChevronDown } from "lucide-react"
+import { BrainCircuit, Loader2, Search } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { AIBadge } from "@/components/dashboard/AIBadge"
@@ -12,9 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { fetchAIContext } from "@/lib/api-client"
 import { dateNDaysAgo, today } from "@/lib/utils"
 import type { Recommendation } from "@/types"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
-const HORIZONS = ["Short-term (1-5 sessions)", "Medium-term (1-3 months)", "Long-term (> 6 months)"]
-const RISKS    = ["Low (conservative)", "Medium", "High (aggressive)"]
 const LOOKBACKS = [
   { v: 30,  l: "30 sessions" },
   { v: 60,  l: "60 sessions" },
@@ -26,8 +25,21 @@ const LOOKBACKS = [
 ]
 
 function AnalyzePanel({ symbol }: { symbol: string }) {
-  const [horizon, setHorizon] = useState(HORIZONS[0])
-  const [risk,    setRisk]    = useState(RISKS[1])
+  const { t, language } = useLanguage()
+
+  const horizonOptions = [
+    { v: "short", l: t("ai.shortTerm") },
+    { v: "medium", l: t("ai.mediumTerm") },
+    { v: "long", l: t("ai.longTerm") },
+  ]
+  const riskOptions = [
+    { v: "low", l: t("ai.lowRisk") },
+    { v: "medium", l: t("ai.mediumRisk") },
+    { v: "high", l: t("ai.highRisk") },
+  ]
+
+  const [horizonKey, setHorizonKey] = useState<"short" | "medium" | "long">("short")
+  const [riskKey, setRiskKey] = useState<"low" | "medium" | "high">("medium")
   const [question, setQuestion] = useState("")
   const [answer,  setAnswer]  = useState("")
   const [rec,     setRec]     = useState<Recommendation | null>(null)
@@ -53,16 +65,20 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
     setRec(null)
     setErr("")
     try {
+      const selectedHorizon = horizonOptions.find(o => o.v === horizonKey)?.l || horizonKey
+      const selectedRisk = riskOptions.find(o => o.v === riskKey)?.l || riskKey
+
       const res = await fetch("/api/ai/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           context: ctxData.context,
           question,
-          horizon,
-          risk,
+          horizon: selectedHorizon,
+          risk: selectedRisk,
           symbol,
           mode: "single",
+          lang: language,
         }),
       })
       const d = await res.json()
@@ -80,49 +96,59 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">Investment Horizon</label>
+          <label className="mb-1.5 block text-xs font-medium text-slate-600">{t("ai.selectHorizon")}</label>
           <select
-            value={horizon}
-            onChange={(e) => setHorizon(e.target.value)}
+            value={horizonKey}
+            onChange={(e) => setHorizonKey(e.target.value as any)}
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
           >
-            {HORIZONS.map((h) => <option key={h}>{h}</option>)}
+            {horizonOptions.map((h) => <option key={h.v} value={h.v}>{h.l}</option>)}
           </select>
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">Risk Tolerance</label>
+          <label className="mb-1.5 block text-xs font-medium text-slate-600">{t("ai.selectRisk")}</label>
           <select
-            value={risk}
-            onChange={(e) => setRisk(e.target.value)}
+            value={riskKey}
+            onChange={(e) => setRiskKey(e.target.value as any)}
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
           >
-            {RISKS.map((r) => <option key={r}>{r}</option>)}
+            {riskOptions.map((r) => <option key={r.v} value={r.v}>{r.l}</option>)}
           </select>
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-medium text-slate-600">Analysis Sessions</label>
+          <label className="mb-1.5 block text-xs font-medium text-slate-600">{language === "vi" ? "Số phiên phân tích" : "Analysis Sessions"}</label>
           <select
             value={lookback}
             onChange={(e) => setLookback(Number(e.target.value))}
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
           >
-            {LOOKBACKS.map((l) => <option key={l.v} value={l.v}>{l.l}</option>)}
+            {LOOKBACKS.map((l) => (
+              <option key={l.v} value={l.v}>
+                {language === "vi" ? `${l.v} phiên` : `${l.v} sessions`}
+              </option>
+            ))}
           </select>
         </div>
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-slate-600">Custom Question (optional)</label>
+        <label className="mb-1.5 block text-xs font-medium text-slate-600">{language === "vi" ? "Câu hỏi tùy chỉnh (tùy chọn)" : "Custom Question (optional)"}</label>
         <Input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="e.g., When should I take profit?"
+          placeholder={language === "vi" ? "VD: Khi nào tôi nên chốt lời?" : "e.g., When should I take profit?"}
         />
       </div>
 
       <Button onClick={analyze} disabled={loading || ctxLoading || !ctxData} className="w-full sm:w-auto">
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-        {ctxLoading ? "Loading data..." : "AI Analysis"}
+        {loading ? (
+          <><Loader2 className="h-4 w-4 animate-spin mr-2" /> {t("ai.buttonAnalyzing")}</>
+        ) : (
+          <>
+            <BrainCircuit className="h-4 w-4 mr-2" />
+            {ctxLoading ? (language === "vi" ? "Đang tải dữ liệu..." : "Loading data...") : t("common.aiAnalysis")}
+          </>
+        )}
       </Button>
 
       {err && (
@@ -147,6 +173,7 @@ function AnalyzePanel({ symbol }: { symbol: string }) {
 }
 
 function ScanPanel() {
+  const { t, language } = useLanguage()
   const [input,   setInput]   = useState("")
   const [symbols, setSymbols] = useState<string[]>([])
   const [results, setResults] = useState<{ sym: string; rec: Recommendation; answer: string }[]>([])
@@ -173,14 +200,21 @@ function ScanPanel() {
         const aiRes  = await fetch("/api/ai/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ context: ctxRes.context, symbol: sym, horizon: "Short-term", risk: "Medium", mode: "scan" }),
+          body: JSON.stringify({ 
+            context: ctxRes.context, 
+            symbol: sym, 
+            horizon: language === "vi" ? "ngắn hạn" : "Short-term", 
+            risk: language === "vi" ? "trung bình" : "Medium", 
+            mode: "scan",
+            lang: language,
+          }),
         })
         const d = await aiRes.json()
         if (aiRes.ok) {
           setResults((r) => [...r, { sym, rec: d.recommendation, answer: d.answer }])
         }
       } catch {
-        setResults((r) => [...r, { sym, rec: "GIU", answer: "Analysis error." }])
+        setResults((r) => [...r, { sym, rec: "GIU", answer: language === "vi" ? "Lỗi phân tích." : "Analysis error." }])
       }
     }
     setLoading(false)
@@ -191,7 +225,11 @@ function ScanPanel() {
     BAN: "bg-red-100 text-red-700",
     GIU: "bg-amber-100 text-amber-700",
   }
-  const recLabel: Record<Recommendation, string> = { MUA: "BUY", BAN: "SELL", GIU: "HOLD" }
+  const recLabel: Record<Recommendation, string> = { 
+    MUA: language === "vi" ? "MUA" : "BUY", 
+    BAN: language === "vi" ? "BÁN" : "SELL", 
+    GIU: language === "vi" ? "NẮM GIỮ" : "HOLD" 
+  }
 
   return (
     <div className="space-y-4">
@@ -199,7 +237,7 @@ function ScanPanel() {
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="VNM, HPG, FPT, ... (max 10 symbols)"
+          placeholder={language === "vi" ? "VNM, HPG, FPT, ... (tối đa 10 mã)" : "VNM, HPG, FPT, ... (max 10 symbols)"}
           className="flex-1 min-w-[200px]"
         />
         <select
@@ -207,11 +245,15 @@ function ScanPanel() {
           onChange={(e) => setLookback(Number(e.target.value))}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm h-10"
         >
-          {LOOKBACKS.map((l) => <option key={l.v} value={l.v}>{l.l}</option>)}
+          {LOOKBACKS.map((l) => (
+            <option key={l.v} value={l.v}>
+              {language === "vi" ? `${l.v} phiên` : `${l.v} sessions`}
+            </option>
+          ))}
         </select>
         <Button onClick={startScan} disabled={loading} className="h-10">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-          Scan
+          {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
+          {language === "vi" ? "Quét" : "Scan"}
         </Button>
       </div>
       {err && <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{err}</div>}
@@ -232,7 +274,7 @@ function ScanPanel() {
       )}
       {loading && symbols.length > results.length && (
         <p className="text-xs text-slate-500">
-          Analyzing {results.length + 1}/{symbols.length}: {symbols[results.length]}…
+          {language === "vi" ? `Đang phân tích ${results.length + 1}/${symbols.length}: ${symbols[results.length]}…` : `Analyzing ${results.length + 1}/${symbols.length}: ${symbols[results.length]}…`}
         </p>
       )}
     </div>
@@ -240,6 +282,7 @@ function ScanPanel() {
 }
 
 export default function AIPage() {
+  const { language } = useLanguage()
   const [symbol, setSymbol] = useState("VNM")
   const [input,  setInput]  = useState("VNM")
 
@@ -254,8 +297,8 @@ export default function AIPage() {
       <Tabs defaultValue="single">
         <div className="flex items-center gap-4">
           <TabsList>
-            <TabsTrigger value="single">Single Stock Analysis</TabsTrigger>
-            <TabsTrigger value="scan">Scan Multiple Stocks</TabsTrigger>
+            <TabsTrigger value="single">{language === "vi" ? "Phân tích một mã" : "Single Stock Analysis"}</TabsTrigger>
+            <TabsTrigger value="scan">{language === "vi" ? "Quét danh mục" : "Scan Multiple Stocks"}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -263,15 +306,19 @@ export default function AIPage() {
           <Card>
             <CardHeader>
               <div className="flex flex-wrap items-center gap-3">
-                <CardTitle className="text-base">AI Advisory — {symbol}</CardTitle>
+                <CardTitle className="text-base">
+                  {language === "vi" ? `Khuyến nghị AI — ${symbol}` : `AI Advisory — ${symbol}`}
+                </CardTitle>
                 <form onSubmit={handleSearch} className="flex gap-2">
                   <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Symbol..."
+                    placeholder={language === "vi" ? "Mã CK..." : "Symbol..."}
                     className="w-28 uppercase"
                   />
-                  <Button type="submit" size="sm" variant="outline">Select</Button>
+                  <Button type="submit" size="sm" variant="outline">
+                    {language === "vi" ? "Chọn" : "Select"}
+                  </Button>
                 </form>
               </div>
             </CardHeader>
@@ -284,8 +331,10 @@ export default function AIPage() {
         <TabsContent value="scan">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Scan Portfolio</CardTitle>
-              <p className="text-xs text-slate-500 mt-1">Enter multiple symbols, AI will analyze them sequentially and provide recommendations.</p>
+              <CardTitle className="text-base">{language === "vi" ? "Quét danh mục" : "Scan Portfolio"}</CardTitle>
+              <p className="text-xs text-slate-500 mt-1">
+                {language === "vi" ? "Nhập nhiều mã CK, AI sẽ phân tích lần lượt và đưa ra khuyến nghị nhanh." : "Enter multiple symbols, AI will analyze them sequentially and provide recommendations."}
+              </p>
             </CardHeader>
             <CardContent>
               <ScanPanel />

@@ -1,5 +1,7 @@
 # VN Stock Tracker
 
+[Tiếng Việt](README.vi.md) | **English**
+
 A Vietnamese stock analysis platform integrated with AI, built using **Next.js 16 + FastAPI + vnstock**.  
 Each user manages their own personal API keys — no bandwidth bottlenecks, no hardcoded keys.
 

@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { fetchIndicators } from "@/lib/api-client"
 import { formatVND, formatPct, dateNDaysAgo, today, changeColor } from "@/lib/utils"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 const COLORS = ["#2563eb", "#16a34a", "#dc2626", "#f59e0b", "#7c3aed", "#0891b2"]
 
 export default function ComparePage() {
+  const { t, language } = useLanguage()
   const [symbols, setSymbols] = useState(["VNM", "FPT"])
   const [newSym, setNewSym]   = useState("")
   const [lookback, setLookback] = useState(180)
@@ -85,12 +87,12 @@ export default function ComparePage() {
           <Input
             value={newSym}
             onChange={(e) => setNewSym(e.target.value)}
-            placeholder="Add symbol..."
+            placeholder={language === "vi" ? "Thêm mã CK..." : "Add symbol..."}
             className="w-28 uppercase"
           />
           <Button type="submit" size="sm" disabled={symbols.length >= 6}>
             <Plus className="h-4 w-4" />
-            Add
+            {t("common.add")}
           </Button>
         </form>
 
@@ -136,7 +138,7 @@ export default function ComparePage() {
       {allLoaded && chartData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Cumulative Return (normalized, base = 100)</CardTitle>
+            <CardTitle className="text-base">{language === "vi" ? "Tỷ suất sinh lời tích lũy (%) (Chuẩn hóa về 100)" : "Cumulative Return (normalized, base = 100)"}</CardTitle>
           </CardHeader>
           <CardContent>
             <ReturnChart data={chartData as any} symbols={symbols} height={400} />
@@ -148,14 +150,21 @@ export default function ComparePage() {
       {allLoaded && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Comparison Summary</CardTitle>
+            <CardTitle className="text-sm">{language === "vi" ? "Bảng so sánh hiệu suất" : "Comparison Summary"}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-xs text-slate-500">
-                    {["Symbol", "Price", "Today", "5 Sessions", "All Time", "Volatility"].map((h) => (
+                    {[
+                      t("common.symbol"),
+                      t("common.price"),
+                      language === "vi" ? "Hôm nay" : "Today",
+                      language === "vi" ? "5 Phiên" : "5 Sessions",
+                      language === "vi" ? "Chu kỳ lọc" : "All Time",
+                      language === "vi" ? "Độ biến động" : "Volatility"
+                    ].map((h) => (
                       <th key={h} className="py-2 px-3 text-right first:text-left font-medium">
                         {h}
                       </th>

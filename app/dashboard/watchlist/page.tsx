@@ -8,14 +8,17 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { formatVND } from "@/lib/utils"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 export default function WatchlistPage() {
+  const { t } = useLanguage()
+
   return (
     <div className="space-y-5">
       <Tabs defaultValue="watchlist">
         <TabsList>
-          <TabsTrigger value="watchlist">Watchlist</TabsTrigger>
-          <TabsTrigger value="alerts">Price Alerts</TabsTrigger>
+          <TabsTrigger value="watchlist">{t("watchlist.title")}</TabsTrigger>
+          <TabsTrigger value="alerts">{t("watchlist.alertTitle")}</TabsTrigger>
         </TabsList>
         <TabsContent value="watchlist">
           <WatchlistTab />
@@ -29,6 +32,7 @@ export default function WatchlistPage() {
 }
 
 function WatchlistTab() {
+  const { t, language } = useLanguage()
   const [sym,  setSym]  = useState("")
   const [note, setNote] = useState("")
 
@@ -51,22 +55,22 @@ function WatchlistTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Watchlist</CardTitle>
+        <CardTitle className="text-base">{t("watchlist.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleAdd} className="flex flex-wrap gap-2">
-          <Input value={sym} onChange={(e) => setSym(e.target.value)} placeholder="Symbol (e.g., VNM)" className="w-32 uppercase" />
-          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note (optional)" className="flex-1 min-w-32" />
+          <Input value={sym} onChange={(e) => setSym(e.target.value)} placeholder={t("watchlist.addPlaceholder")} className="w-32 uppercase" />
+          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("watchlist.notePlaceholder")} className="flex-1 min-w-32" />
           <Button type="submit" size="sm" disabled={add.isPending}>
             <Plus className="h-4 w-4" />
-            Add
+            {t("common.add")}
           </Button>
         </form>
 
         {isLoading && <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>}
 
         {!isLoading && items.length === 0 && (
-          <p className="py-8 text-center text-sm text-slate-400">No stocks added yet. Add your first symbol!</p>
+          <p className="py-8 text-center text-sm text-slate-400">{t("watchlist.noWatchlist")}</p>
         )}
 
         <div className="divide-y divide-slate-50">
@@ -76,7 +80,7 @@ function WatchlistTab() {
                 <span className="font-semibold text-slate-900">{item.symbol}</span>
                 {item.note && <span className="ml-2 text-xs text-slate-400">{item.note}</span>}
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Added {new Date(item.addedAt).toLocaleDateString("en-US")}
+                  {t("watchlist.addedAt", { date: new Date(item.addedAt).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US") })}
                 </p>
               </div>
               <button
@@ -94,6 +98,7 @@ function WatchlistTab() {
 }
 
 function AlertsTab() {
+  const { t, language } = useLanguage()
   const [sym,       setSym]       = useState("")
   const [condition, setCondition] = useState<"above" | "below">("above")
   const [price,     setPrice]     = useState("")
@@ -126,23 +131,23 @@ function AlertsTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Price Alerts</CardTitle>
+        <CardTitle className="text-base">{t("watchlist.alertTitle")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleCreate} className="flex flex-wrap gap-2">
-          <Input value={sym} onChange={(e) => setSym(e.target.value)} placeholder="Symbol" className="w-24 uppercase" />
+          <Input value={sym} onChange={(e) => setSym(e.target.value)} placeholder={t("common.symbol")} className="w-24 uppercase" />
           <select
             value={condition}
             onChange={(e) => setCondition(e.target.value as any)}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
           >
-            <option value="above">Above</option>
-            <option value="below">Below</option>
+            <option value="above">{t("watchlist.above")}</option>
+            <option value="below">{t("watchlist.below")}</option>
           </select>
-          <Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price (VND)" type="number" className="w-32" />
+          <Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={`${t("common.price")} (VND)`} type="number" className="w-32" />
           <Button type="submit" size="sm" disabled={create.isPending}>
             <Bell className="h-4 w-4" />
-            Create Alert
+            {t("watchlist.buttonCreate")}
           </Button>
         </form>
 
@@ -150,7 +155,7 @@ function AlertsTab() {
 
         {active.length > 0 && (
           <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Active</h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t("watchlist.activeAlerts")}</h3>
             <div className="divide-y divide-slate-50">
               {active.map((alert) => (
                 <div key={alert.id} className="flex items-center justify-between py-3">
@@ -158,7 +163,7 @@ function AlertsTab() {
                     <Bell className="h-4 w-4 text-blue-500" />
                     <span className="font-semibold text-slate-900">{alert.symbol}</span>
                     <Badge variant="secondary" className="text-xs">
-                      {alert.condition === "above" ? "Above" : "Below"} {formatVND(alert.price)}
+                      {alert.condition === "above" ? t("watchlist.above") : t("watchlist.below")} {formatVND(alert.price)}
                     </Badge>
                   </div>
                   <div className="flex gap-1">
@@ -177,7 +182,7 @@ function AlertsTab() {
 
         {inactive.length > 0 && (
           <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Fired / Inactive</h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{t("watchlist.inactiveAlerts")}</h3>
             <div className="divide-y divide-slate-50 opacity-60">
               {inactive.map((alert) => (
                 <div key={alert.id} className="flex items-center justify-between py-2">
@@ -185,11 +190,11 @@ function AlertsTab() {
                     <BellOff className="h-4 w-4 text-slate-400" />
                     <span className="text-sm text-slate-600">{alert.symbol}</span>
                     <Badge variant="outline" className="text-xs">
-                      {alert.condition === "above" ? "Above" : "Below"} {formatVND(alert.price)}
+                      {alert.condition === "above" ? t("watchlist.above") : t("watchlist.below")} {formatVND(alert.price)}
                     </Badge>
                     {alert.firedAt && (
                       <span className="text-xs text-slate-400">
-                        Fired: {new Date(alert.firedAt).toLocaleDateString("en-US")}
+                        {t("watchlist.firedAt", { date: new Date(alert.firedAt).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US") })}
                       </span>
                     )}
                   </div>
@@ -203,7 +208,7 @@ function AlertsTab() {
         )}
 
         {!isLoading && alerts.length === 0 && (
-          <p className="py-8 text-center text-sm text-slate-400">No alerts set.</p>
+          <p className="py-8 text-center text-sm text-slate-400">{t("watchlist.noAlerts")}</p>
         )}
       </CardContent>
     </Card>

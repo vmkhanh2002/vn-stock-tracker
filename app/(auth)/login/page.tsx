@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation"
 import { TrendingUp, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 export default function LoginPage() {
+  const { t, language } = useLanguage()
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -24,7 +26,7 @@ export default function LoginPage() {
         redirect: false,
       })
       if (res?.error) {
-        setError("Invalid email or password.")
+        setError(language === "vi" ? "Email hoặc mật khẩu không hợp lệ." : "Invalid email or password.")
       } else {
         router.push("/dashboard")
       }
@@ -41,7 +43,7 @@ export default function LoginPage() {
             <TrendingUp className="h-6 w-6 text-white" />
           </div>
           <h1 className="text-xl font-bold text-slate-900">VN Stock Tracker</h1>
-          <p className="text-sm text-slate-500">Sign in to continue</p>
+          <p className="text-sm text-slate-500">{t("login.desc")}</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -52,7 +54,7 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Email</label>
+              <label className="text-sm font-medium text-slate-700">{t("login.email")}</label>
               <Input
                 type="email"
                 placeholder="you@example.com"
@@ -62,7 +64,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium text-slate-700">Password</label>
+              <label className="text-sm font-medium text-slate-700">{t("login.password")}</label>
               <Input
                 type="password"
                 placeholder="••••••••"
@@ -72,14 +74,21 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t("login.signingin")}
+                </>
+              ) : (
+                t("login.signin")
+              )}
             </Button>
           </form>
 
           <div className="mt-4 text-center">
-            <span className="text-sm text-slate-500">Don't have an account? </span>
+            <span className="text-sm text-slate-500">{t("login.dontHaveAccount")}{" "}</span>
             <a href="/register" className="text-sm font-medium text-blue-600 hover:underline">
-              Register
+              {t("login.signup")}
             </a>
           </div>
         </div>

@@ -5,8 +5,10 @@ import { trpc } from "@/lib/trpc/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 export default function AdminUsersPage() {
+  const { t, language } = useLanguage()
   const [page, setPage] = useState(1)
   const limit = 20
 
@@ -26,14 +28,22 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-lg font-semibold text-slate-900">Users ({total})</h1>
+      <h1 className="text-lg font-semibold text-slate-900">{t("admin.usersTitle")} ({total})</h1>
       <Card>
         <CardContent className="pt-4">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-xs text-slate-500">
-                {["Email", "Name", "Role", "Watchlist", "AI Calls", "Created At", "Action"].map((h) => (
-                  <th key={h} className="py-2 px-3 text-left font-medium">{h}</th>
+                {[
+                  "Email",
+                  t("register.name"),
+                  t("admin.role"),
+                  "Watchlist",
+                  language === "vi" ? "Yêu cầu AI" : "AI Calls",
+                  t("admin.createdAt"),
+                  language === "vi" ? "Thao tác" : "Action"
+                ].map((h, i) => (
+                  <th key={i} className="py-2 px-3 text-left font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -50,7 +60,7 @@ export default function AdminUsersPage() {
                   <td className="py-2 px-3 text-xs text-center">{user._count.watchlists}</td>
                   <td className="py-2 px-3 text-xs text-center">{user._count.aiUsageLogs}</td>
                   <td className="py-2 px-3 text-xs text-slate-500">
-                    {new Date(user.createdAt).toLocaleDateString("en-US")}
+                    {new Date(user.createdAt).toLocaleDateString(language === "vi" ? "vi-VN" : "en-US")}
                   </td>
                   <td className="py-2 px-3">
                     <button

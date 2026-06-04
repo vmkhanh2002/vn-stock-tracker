@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
-import { SlidersHorizontal, Search, Star, Loader2, ArrowUpDown, TrendingUp, ShieldAlert, BadgeDollarSign, ChevronRight } from "lucide-react"
+import { SlidersHorizontal, Search, Star, Loader2, ArrowUpDown, TrendingUp, ShieldAlert, BadgeDollarSign } from "lucide-react"
 import Link from "next/link"
 import { trpc } from "@/lib/trpc/client"
 import { fetchScreener } from "@/lib/api-client"
@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { formatVND, formatPct, formatVolume } from "@/lib/utils"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 type PresetType = "value" | "growth" | "safety" | "none"
 
 export default function ScreenerPage() {
+  const { t, language } = useLanguage()
   const [group, setGroup] = useState("VN30")
   const [peMin, setPeMin] = useState<string>("")
   const [peMax, setPeMax] = useState<string>("")
@@ -42,6 +44,9 @@ export default function ScreenerPage() {
 
   // Gọi API Screener
   const { mutate: runFilter, data: results = [], isPending, error } = useMutation({
+    onSuccess: (data) => {
+      // Do nothing extra, but we could
+    },
     mutationFn: () => {
       return fetchScreener({
         group,
@@ -115,7 +120,10 @@ export default function ScreenerPage() {
     if (isWatched) {
       removeFromWatchlist.mutate({ symbol })
     } else {
-      addToWatchlist.mutate({ symbol, note: "Added from stock screener" })
+      addToWatchlist.mutate({ 
+        symbol, 
+        note: language === "vi" ? "Thêm từ bộ lọc cổ phiếu" : "Added from stock screener" 
+      })
     }
   }
 
@@ -149,13 +157,13 @@ export default function ScreenerPage() {
       {/* Tiêu đề trang */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Stock Screener</h1>
-          <p className="text-sm text-slate-500 mt-1">Scan and filter stocks across the Vietnamese market by FA and TA metrics</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{t("screener.title")}</h1>
+          <p className="text-sm text-slate-500 mt-1">{t("screener.desc")}</p>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-sm text-slate-500 font-medium">Filter presets:</span>
+        <span className="text-sm text-slate-500 font-medium">{t("screener.presets")}:</span>
         <Button 
           variant={preset === "value" ? "default" : "outline"} 
           size="sm" 
@@ -163,7 +171,7 @@ export default function ScreenerPage() {
           className="h-8 gap-1.5"
         >
           <BadgeDollarSign className="h-4 w-4" />
-          Value Investing (Value)
+          {t("screener.presetValue")}
         </Button>
         <Button 
           variant={preset === "growth" ? "default" : "outline"} 
@@ -172,7 +180,7 @@ export default function ScreenerPage() {
           className="h-8 gap-1.5"
         >
           <TrendingUp className="h-4 w-4" />
-          Momentum (Growth)
+          {t("screener.presetGrowth")}
         </Button>
         <Button 
           variant={preset === "safety" ? "default" : "outline"} 
@@ -181,7 +189,7 @@ export default function ScreenerPage() {
           className="h-8 gap-1.5"
         >
           <ShieldAlert className="h-4 w-4" />
-          High Safety (Safety)
+          {t("screener.presetSafety")}
         </Button>
         {preset !== "none" && (
           <Button 
@@ -190,7 +198,7 @@ export default function ScreenerPage() {
             onClick={() => applyPreset("none")}
             className="h-8 text-xs text-slate-500 hover:text-slate-950"
           >
-            Reset
+            {t("screener.reset")}
           </Button>
         )}
       </div>
@@ -200,7 +208,7 @@ export default function ScreenerPage() {
         <CardHeader className="py-4 border-b border-slate-50">
           <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4 text-slate-500" />
-            Configure Filter Parameters
+            {t("screener.configTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-5">
@@ -208,33 +216,33 @@ export default function ScreenerPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Cột 1: Rổ cổ phiếu */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Stock Group</label>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t("screener.stockGroup")}</label>
                 <select
                   value={group}
                   onChange={(e) => { setGroup(e.target.value); setPreset("none"); }}
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-900"
                 >
-                  <option value="VN30">VN30 Basket (30 large HOSE stocks)</option>
-                  <option value="HNX30">HNX30 Basket (30 large HNX stocks)</option>
-                  <option value="VN100">VN100 Basket (100 largest stocks)</option>
-                  <option value="VNMidCap">Mid Cap (VNMidCap)</option>
-                  <option value="VNSmallCap">Small Cap (VNSmallCap)</option>
-                  <option value="HOSE">HOSE Exchange (Top 150 Liquidity)</option>
-                  <option value="HNX">HNX Exchange (Top 150 Liquidity)</option>
-                  <option value="UPCOM">UPCoM Exchange (Top 150 Liquidity)</option>
+                  <option value="VN30">{language === "vi" ? "Rổ VN30 (30 mã vốn hóa lớn HOSE)" : "VN30 Basket (30 large HOSE stocks)"}</option>
+                  <option value="HNX30">{language === "vi" ? "Rổ HNX30 (30 mã lớn sàn HNX)" : "HNX30 Basket (30 large HNX stocks)"}</option>
+                  <option value="VN100">{language === "vi" ? "Rổ VN100 (100 mã lớn nhất)" : "VN100 Basket (100 largest stocks)"}</option>
+                  <option value="VNMidCap">{language === "vi" ? "Cổ phiếu vốn hóa vừa (VNMidCap)" : "Mid Cap (VNMidCap)"}</option>
+                  <option value="VNSmallCap">{language === "vi" ? "Cổ phiếu vốn hóa nhỏ (VNSmallCap)" : "Small Cap (VNSmallCap)"}</option>
+                  <option value="HOSE">{language === "vi" ? "Sàn HOSE (Top 150 thanh khoản)" : "HOSE Exchange (Top 150 Liquidity)"}</option>
+                  <option value="HNX">{language === "vi" ? "Sàn HNX (Top 150 thanh khoản)" : "HNX Exchange (Top 150 Liquidity)"}</option>
+                  <option value="UPCOM">{language === "vi" ? "Sàn UPCoM (Top 150 thanh khoản)" : "UPCoM Exchange (Top 150 Liquidity)"}</option>
                 </select>
               </div>
 
               {/* Cột 2: P/E & P/B */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">P/E & P/B Ratios</label>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{language === "vi" ? "Chỉ số P/E & P/B" : "P/E & P/B Ratios"}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <Input 
                     type="number" 
                     step="0.1" 
                     value={peMax} 
                     onChange={(e) => { setPeMax(e.target.value); setPreset("none"); }} 
-                    placeholder="Max P/E" 
+                    placeholder={t("screener.maxPE")} 
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
                   <Input 
@@ -242,7 +250,7 @@ export default function ScreenerPage() {
                     step="0.1" 
                     value={pbMax} 
                     onChange={(e) => { setPbMax(e.target.value); setPreset("none"); }} 
-                    placeholder="Max P/B" 
+                    placeholder={t("screener.maxPB")} 
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
                 </div>
@@ -257,7 +265,7 @@ export default function ScreenerPage() {
                     step="0.5" 
                     value={roeMin} 
                     onChange={(e) => { setRoeMin(e.target.value); setPreset("none"); }} 
-                    placeholder="Min ROE (%)" 
+                    placeholder={t("screener.minROE")} 
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
                   <Input 
@@ -265,7 +273,7 @@ export default function ScreenerPage() {
                     step="0.5" 
                     value={roaMin} 
                     onChange={(e) => { setRoaMin(e.target.value); setPreset("none"); }} 
-                    placeholder="Min ROA (%)" 
+                    placeholder={t("screener.minROA")} 
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
                 </div>
@@ -273,21 +281,21 @@ export default function ScreenerPage() {
 
               {/* Cột 4: Biến động giá & Khối lượng */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Price Change & Vol (Real-time)</label>
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{language === "vi" ? "Biến động giá & Khối lượng (Thời gian thực)" : "Price Change & Vol (Real-time)"}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <Input 
                     type="number" 
                     step="0.1" 
                     value={pctChangeMin} 
                     onChange={(e) => { setPctChangeMin(e.target.value); setPreset("none"); }} 
-                    placeholder="Min Price Change %" 
+                    placeholder={t("screener.minPriceChange")} 
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
                   <Input 
                     type="number" 
                     value={volumeMin} 
                     onChange={(e) => { setVolumeMin(e.target.value); setPreset("none"); }} 
-                    placeholder="Min Volume" 
+                    placeholder={t("screener.minVolume")} 
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
                 </div>
@@ -299,12 +307,12 @@ export default function ScreenerPage() {
                 {isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Filtering data...
+                    {t("screener.buttonFiltering")}
                   </>
                 ) : (
                   <>
                     <Search className="h-4 w-4" />
-                    Filter Stocks
+                    {t("screener.buttonFilter")}
                   </>
                 )}
               </Button>
@@ -316,7 +324,7 @@ export default function ScreenerPage() {
       {error && (
         <Card className="border-red-100 bg-red-50/50">
           <CardContent className="py-3 text-sm text-red-600 font-medium">
-            An error occurred: {error.message || "Please check your Vnstock API key in Settings."}
+            {language === "vi" ? "Đã xảy ra lỗi: " : "An error occurred: "}{error.message || "Please check your Vnstock API key in Settings."}
           </CardContent>
         </Card>
       )}
@@ -324,23 +332,23 @@ export default function ScreenerPage() {
       <Card className="border-slate-100 shadow-sm overflow-hidden">
         <CardHeader className="py-4 border-b border-slate-50 flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base font-semibold text-slate-800">
-            Scan Results ({results.length} stocks)
+            {t("screener.scanResults", { count: results.length })}
           </CardTitle>
           <div className="text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded">
-            FA metrics cached for 12 hours | Prices updated real-time
+            {t("screener.cacheNotice")}
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {!isPending && results.length === 0 && (
             <div className="py-16 text-center">
-              <p className="text-sm text-slate-400">No stocks match the filter criteria, or you haven't clicked 'Filter Stocks' yet.</p>
+              <p className="text-sm text-slate-400">{t("screener.noResults")}</p>
             </div>
           )}
 
           {isPending && (
             <div className="py-24 text-center space-y-2">
               <Loader2 className="h-8 w-8 animate-spin text-slate-400 mx-auto" />
-              <p className="text-sm text-slate-400">Loading and updating fundamental financial metrics...</p>
+              <p className="text-sm text-slate-400">{t("screener.loadingNotice")}</p>
             </div>
           )}
 
@@ -351,33 +359,33 @@ export default function ScreenerPage() {
                   <tr className="bg-slate-50/70 border-b border-slate-100 text-slate-500 font-medium select-none">
                     <th className="py-3 px-4 w-12"></th>
                     <th onClick={() => handleSort("symbol")} className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors w-24">
-                      <span className="flex items-center gap-1">Symbol <ArrowUpDown className="h-3 w-3" /></span>
+                      <span className="flex items-center gap-1">{t("common.symbol")} <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
                     <th onClick={() => handleSort("organ_name")} className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors max-w-xs">
-                      <span className="flex items-center gap-1">Company Name <ArrowUpDown className="h-3 w-3" /></span>
+                      <span className="flex items-center gap-1">{t("common.companyName")} <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
                     <th onClick={() => handleSort("price")} className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors text-right">
-                      <span className="flex items-center gap-1 justify-end">Price <ArrowUpDown className="h-3 w-3" /></span>
+                      <span className="flex items-center gap-1 justify-end">{t("common.price")} <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
                     <th onClick={() => handleSort("pct_change")} className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors text-right">
-                      <span className="flex items-center gap-1 justify-end">% Change <ArrowUpDown className="h-3 w-3" /></span>
+                      <span className="flex items-center gap-1 justify-end">{t("common.pctChange")} <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
                     <th onClick={() => handleSort("volume")} className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors text-right">
-                      <span className="flex items-center gap-1 justify-end">Volume <ArrowUpDown className="h-3 w-3" /></span>
+                      <span className="flex items-center gap-1 justify-end">{t("common.volume")} <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
                     <th onClick={() => handleSort("pe")} className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors text-right">
-                      <span className="flex items-center gap-1 justify-end">P/E <ArrowUpDown className="h-3 w-3" /></span>
+                      <span className="flex items-center gap-1 justify-end">{t("common.pe")} <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
                     <th onClick={() => handleSort("pb")} className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors text-right">
-                      <span className="flex items-center gap-1 justify-end">P/B <ArrowUpDown className="h-3 w-3" /></span>
+                      <span className="flex items-center gap-1 justify-end">{t("common.pb")} <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
                     <th onClick={() => handleSort("roe")} className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors text-right">
-                      <span className="flex items-center gap-1 justify-end">ROE (%) <ArrowUpDown className="h-3 w-3" /></span>
+                      <span className="flex items-center gap-1 justify-end">{t("common.roe")} <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
                     <th onClick={() => handleSort("roa")} className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors text-right">
-                      <span className="flex items-center gap-1 justify-end">ROA (%) <ArrowUpDown className="h-3 w-3" /></span>
+                      <span className="flex items-center gap-1 justify-end">{t("common.roa")} <ArrowUpDown className="h-3 w-3" /></span>
                     </th>
-                    <th className="py-3 px-4 text-center">Actions</th>
+                    <th className="py-3 px-4 text-center">{t("common.actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -450,11 +458,11 @@ export default function ScreenerPage() {
                         <td className="py-3 px-4 text-center">
                           <div className="flex justify-center items-center gap-2">
                             <Link href={`/dashboard/lookup?symbol=${r.symbol}`} className="text-xs text-blue-500 font-medium hover:underline flex items-center">
-                              Chart
+                              {t("common.chart")}
                             </Link>
                             <span className="text-slate-200">|</span>
                             <Link href={`/dashboard/ai?symbol=${r.symbol}`} className="text-xs text-purple-500 font-medium hover:underline flex items-center">
-                              AI Analysis
+                              {t("common.aiAnalysis")}
                             </Link>
                           </div>
                         </td>

@@ -4,18 +4,21 @@ import { usePathname } from "next/navigation"
 import { BarChart2, GitCompare, Activity, BrainCircuit, Bell, Settings, TrendingUp, SlidersHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+import { useLanguage } from "@/components/providers/LanguageProvider"
+
 const navItems = [
-  { href: "/dashboard/lookup",   label: "Stock Lookup",     icon: BarChart2 },
-  { href: "/dashboard/compare",  label: "Compare Stocks",   icon: GitCompare },
-  { href: "/dashboard/realtime", label: "Real-time & Heatmap", icon: Activity },
-  { href: "/dashboard/screener", label: "Stock Screener",   icon: SlidersHorizontal },
-  { href: "/dashboard/ai",       label: "AI Advisor",       icon: BrainCircuit },
-  { href: "/dashboard/watchlist",label: "Watchlist & Alerts", icon: Bell },
-  { href: "/dashboard/settings", label: "Settings",         icon: Settings },
+  { href: "/dashboard/lookup",   key: "sidebar.lookup",     icon: BarChart2 },
+  { href: "/dashboard/compare",  key: "sidebar.compare",    icon: GitCompare },
+  { href: "/dashboard/realtime", key: "sidebar.realtime",   icon: Activity },
+  { href: "/dashboard/screener", key: "sidebar.screener",   icon: SlidersHorizontal },
+  { href: "/dashboard/ai",       key: "sidebar.ai",         icon: BrainCircuit },
+  { href: "/dashboard/watchlist",key: "sidebar.watchlist",  icon: Bell },
+  { href: "/dashboard/settings", key: "sidebar.settings",   icon: Settings },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { t } = useLanguage()
   return (
     <aside className="flex h-screen w-56 flex-col border-r border-slate-200 bg-white">
       <div className="flex h-14 items-center gap-2 border-b border-slate-200 px-4">
@@ -23,7 +26,7 @@ export function Sidebar() {
         <span className="text-sm font-bold text-slate-900">VN Stock</span>
       </div>
       <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-        {navItems.map(({ href, label, icon: Icon }) => (
+        {navItems.map(({ href, key, icon: Icon }) => (
           <Link
             key={href}
             href={href}
@@ -35,7 +38,7 @@ export function Sidebar() {
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
-            {label}
+            {t(key)}
           </Link>
         ))}
       </nav>

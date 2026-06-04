@@ -13,13 +13,14 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { fetchIndicators } from "@/lib/api-client"
 import { formatVND, formatPct, formatVolume, dateNDaysAgo, today, changeColor } from "@/lib/utils"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 import type { OHLCVRow } from "@/types"
 
 const SOURCES  = ["VCI", "KBS"] as const
 const INTERVALS = [
-  { v: "1D", l: "Day" },
-  { v: "1W", l: "Week" },
-  { v: "1M", l: "Month" },
+  { v: "1D", key: "lookup.day" },
+  { v: "1W", key: "lookup.week" },
+  { v: "1M", key: "lookup.month" },
 ]
 const LOOKBACKS = [
   { v: 90,  l: "3M" },
@@ -28,38 +29,46 @@ const LOOKBACKS = [
   { v: 730, l: "2Y" },
 ]
 
-function getSignals(last: OHLCVRow, prev: OHLCVRow) {
+function getSignals(last: OHLCVRow, prev: OHLCVRow, language: string, t: any) {
   const signals: { label: string; signal: "bullish" | "bearish" | "neutral"; value?: string }[] = []
   if (last.ma10 && last.ma20) {
     signals.push({
-      label: last.close > last.ma20 ? "Above MA20" : "Below MA20",
+      label: last.close > last.ma20 
+        ? (language === "vi" ? "Trên MA20" : "Above MA20") 
+        : (language === "vi" ? "Dưới MA20" : "Below MA20"),
       signal: last.close > last.ma20 ? "bullish" : "bearish",
     })
   }
   if (last.rsi != null) {
     signals.push({
-      label: last.rsi > 70 ? "Overbought" : last.rsi < 30 ? "Oversold" : "RSI Neutral",
+      label: last.rsi > 70 ? t("lookup.overbought") : last.rsi < 30 ? t("lookup.oversold") : t("lookup.neutral"),
       signal: last.rsi > 70 ? "bearish" : last.rsi < 30 ? "bullish" : "neutral",
       value: last.rsi.toFixed(1),
     })
   }
   if (last.macdHist != null) {
     signals.push({
-      label: last.macdHist > 0 ? "MACD Bullish" : "MACD Bearish",
+      label: last.macdHist > 0 
+        ? (language === "vi" ? "MACD Tăng giá" : "MACD Bullish") 
+        : (language === "vi" ? "MACD Giảm giá" : "MACD Bearish"),
       signal: last.macdHist > 0 ? "bullish" : "bearish",
       value: last.macdHist.toFixed(2),
     })
   }
   if (last.adx != null) {
     signals.push({
-      label: last.adx > 25 ? "Strong Trend" : "Range-bound",
+      label: last.adx > 25 ? t("lookup.strongTrend") : t("lookup.rangeBound"),
       signal: last.adx > 25 ? (last.diPlus! > last.diMinus! ? "bullish" : "bearish") : "neutral",
       value: `ADX ${last.adx.toFixed(0)}`,
     })
   }
   if (last.stochK != null) {
     signals.push({
-      label: last.stochK > 80 ? "Stoch Overbought" : last.stochK < 20 ? "Stoch Oversold" : "Stoch Neutral",
+      label: last.stochK > 80 
+        ? (language === "vi" ? "Stoch Quá mua" : "Stoch Overbought") 
+        : last.stochK < 20 
+        ? (language === "vi" ? "Stoch Quá bán" : "Stoch Oversold") 
+        : (language === "vi" ? "Stoch Trung tính" : "Stoch Neutral"),
       signal: last.stochK > 80 ? "bearish" : last.stochK < 20 ? "bullish" : "neutral",
       value: `K${last.stochK.toFixed(0)}`,
     })
@@ -67,14 +76,15 @@ function getSignals(last: OHLCVRow, prev: OHLCVRow) {
   // Golden/death cross
   if (last.ma10 && last.ma50 && prev.ma10 && prev.ma50) {
     if (prev.ma10 < prev.ma50 && last.ma10 > last.ma50)
-      signals.push({ label: "Golden Cross", signal: "bullish" })
+      signals.push({ label: language === "vi" ? "Giao cắt Vàng" : "Golden Cross", signal: "bullish" })
     if (prev.ma10 > prev.ma50 && last.ma10 < last.ma50)
-      signals.push({ label: "Death Cross", signal: "bearish" })
+      signals.push({ label: language === "vi" ? "Giao cắt Tử thần" : "Death Cross", signal: "bearish" })
   }
   return signals
 }
 
 export default function LookupPage() {
+  const { t, language } = useLanguage()
   const [symbol, setSymbol]   = useState("VNM")
   const [input,  setInput]    = useState("VNM")
   const [source, setSource]   = useState<"VCI" | "KBS">("VCI")
@@ -103,7 +113,7 @@ export default function LookupPage() {
 
   const chg    = last && prev ? last.close - prev.close : null
   const chgPct = last && prev && prev.close ? (chg! / prev.close) * 100 : null
-  const signals = last && prev ? getSignals(last, prev) : []
+  const signals = last && prev ? getSignals(last, prev, language, t) : []
 
   const volAvg20 = last?.volMa20
   const volRatio = last && volAvg20 ? last.volume / volAvg20 : null
@@ -122,12 +132,12 @@ export default function LookupPage() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="e.g., VNM, HPG, FPT"
+            placeholder={language === "vi" ? "VD: VNM, HPG, FPT" : "e.g., VNM, HPG, FPT"}
             className="w-36 uppercase"
           />
           <Button type="submit" size="sm">
             <Search className="h-4 w-4" />
-            Lookup
+            {language === "vi" ? "Tra cứu" : "Lookup"}
           </Button>
         </form>
 
@@ -150,7 +160,7 @@ export default function LookupPage() {
 
         {/* Interval */}
         <div className="flex gap-1">
-          {INTERVALS.map(({ v, l }) => (
+          {INTERVALS.map(({ v, key }) => (
             <button
               key={v}
               onClick={() => setIv(v)}
@@ -160,7 +170,7 @@ export default function LookupPage() {
                   : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
               }`}
             >
-              {l}
+              {t(key)}
             </button>
           ))}
         </div>
@@ -206,22 +216,22 @@ export default function LookupPage() {
           {/* KPI Row 1 */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <KPICard
-              label="Close Price"
+              label={language === "vi" ? "Giá đóng cửa" : "Close Price"}
               value={formatVND(last.close)}
-              sub={`${formatPct(chgPct)} today`}
+              sub={`${formatPct(chgPct)} ${language === "vi" ? "hôm nay" : "today"}`}
               trend={chgPct == null ? undefined : chgPct > 0 ? "up" : chgPct < 0 ? "down" : "neutral"}
               icon={chgPct != null && chgPct > 0 ? <TrendingUp className="h-4 w-4" /> : chgPct != null && chgPct < 0 ? <TrendingDown className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
             />
-            <KPICard label="Open" value={formatVND(last.open)} />
-            <KPICard label="High" value={formatVND(last.high)} trend="up" />
-            <KPICard label="Low" value={formatVND(last.low)} trend="down" />
+            <KPICard label={language === "vi" ? "Mở cửa" : "Open"} value={formatVND(last.open)} />
+            <KPICard label={language === "vi" ? "Cao nhất" : "High"} value={formatVND(last.high)} trend="up" />
+            <KPICard label={language === "vi" ? "Thấp nhất" : "Low"} value={formatVND(last.low)} trend="down" />
           </div>
 
           {/* KPI Row 2 */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <KPICard label="Volume" value={formatVolume(last.volume)} sub={volRatio ? `${volRatio.toFixed(1)}× 20MA Avg` : undefined} />
-            <KPICard label="RSI(14)" value={last.rsi?.toFixed(1) ?? "—"} sub={last.rsi != null ? (last.rsi > 70 ? "Overbought" : last.rsi < 30 ? "Oversold" : "Neutral") : undefined} />
-            <KPICard label="ADX" value={last.adx?.toFixed(1) ?? "—"} sub={last.adx != null ? (last.adx > 25 ? "Strong Trend" : "Range-bound") : undefined} />
+            <KPICard label={t("common.volume")} value={formatVolume(last.volume)} sub={volRatio ? `${volRatio.toFixed(1)}× ${language === "vi" ? "TB 20 phiên" : "20MA Avg"}` : undefined} />
+            <KPICard label="RSI(14)" value={last.rsi?.toFixed(1) ?? "—"} sub={last.rsi != null ? (last.rsi > 70 ? t("lookup.overbought") : last.rsi < 30 ? t("lookup.oversold") : t("lookup.neutral")) : undefined} />
+            <KPICard label="ADX" value={last.adx?.toFixed(1) ?? "—"} sub={last.adx != null ? (last.adx > 25 ? t("lookup.strongTrend") : t("lookup.rangeBound")) : undefined} />
             <KPICard label="MACD Hist" value={last.macdHist?.toFixed(2) ?? "—"} trend={last.macdHist != null ? (last.macdHist > 0 ? "up" : "down") : undefined} />
           </div>
 
@@ -236,7 +246,7 @@ export default function LookupPage() {
 
           {/* Overlay toggles */}
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-slate-500 font-medium">Overlay:</span>
+            <span className="text-slate-500 font-medium">{language === "vi" ? "Đường chỉ báo:" : "Overlay:"}</span>
             {[
               { label: "MA10", active: showMA10, toggle: () => setShowMA10((v) => !v) },
               { label: "MA20", active: showMA20, toggle: () => setShowMA20((v) => !v) },
@@ -305,9 +315,9 @@ export default function LookupPage() {
           {/* Data Table */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold">Transaction History</CardTitle>
+              <CardTitle className="text-sm font-semibold">{language === "vi" ? "Lịch sử giao dịch" : "Transaction History"}</CardTitle>
               <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <span>Show</span>
+                <span>{language === "vi" ? "Hiển thị" : "Show"}</span>
                 <input
                   type="number"
                   min={5}
@@ -321,7 +331,7 @@ export default function LookupPage() {
                   }}
                   className="w-14 rounded-md border border-slate-200 px-1.5 py-1 text-center font-mono text-xs font-semibold focus:border-blue-500 focus:outline-none"
                 />
-                <span>latest sessions</span>
+                <span>{language === "vi" ? "phiên gần nhất" : "latest sessions"}</span>
               </div>
             </CardHeader>
             <CardContent>
@@ -329,7 +339,15 @@ export default function LookupPage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-100 text-slate-500">
-                      {["Date", "Open", "High", "Low", "Close", "Volume", "% Change"].map((h) => (
+                      {[
+                        language === "vi" ? "Ngày" : "Date",
+                        language === "vi" ? "Mở" : "Open",
+                        language === "vi" ? "Cao" : "High",
+                        language === "vi" ? "Thấp" : "Low",
+                        language === "vi" ? "Đóng" : "Close",
+                        t("common.volume"),
+                        t("common.pctChange")
+                      ].map((h) => (
                         <th key={h} className="py-2 px-2 text-right first:text-left font-medium">
                           {h}
                         </th>
@@ -338,9 +356,9 @@ export default function LookupPage() {
                   </thead>
                   <tbody>
                     {rows
-                      .slice(-tableLimit)
-                      .reverse()
-                      .map((r, i) => {
+                       .slice(-tableLimit)
+                       .reverse()
+                       .map((r, i) => {
                         const pct = r.returnPct ?? 0
                         return (
                           <tr key={i} className="border-b border-slate-50 hover:bg-slate-50">
@@ -366,3 +384,4 @@ export default function LookupPage() {
     </div>
   )
 }
+

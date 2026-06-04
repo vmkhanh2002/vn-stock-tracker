@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 export default function SettingsPage() {
+  const { t, language } = useLanguage()
   const { data: settings, isLoading } = trpc.user.getSettings.useQuery()
   const update = trpc.user.updateSettings.useMutation()
 
@@ -63,7 +65,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-xl space-y-5">
-      <h1 className="text-lg font-semibold text-slate-900">Settings</h1>
+      <h1 className="text-lg font-semibold text-slate-900">{t("settings.title")}</h1>
 
       <form onSubmit={handleSave} className="space-y-4">
         {/* OpenRouter API Key */}
@@ -76,22 +78,22 @@ export default function SettingsPage() {
               {settings?.hasOpenRouterKey ? (
                 <>
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-700">API Key configured</span>
+                  <span className="text-sm text-green-700">{t("settings.apiKeyConfigured")}</span>
                 </>
               ) : (
-                <span className="text-sm text-amber-700">⚠️ No API Key configured — AI features will be disabled</span>
+                <span className="text-sm text-amber-700">⚠️ {t("settings.apiKeyMissing")}</span>
               )}
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600">
-                {settings?.hasOpenRouterKey ? "Change API Key" : "Enter OpenRouter API Key"}
+                {settings?.hasOpenRouterKey ? (language === "vi" ? "Thay đổi API Key" : "Change API Key") : t("settings.apiKeyLabel")}
               </label>
               <div className="relative">
                 <Input
                   type={showKey ? "text" : "password"}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={settings?.hasOpenRouterKey ? "Leave blank to keep current key" : "sk-or-v1-..."}
+                  placeholder={settings?.hasOpenRouterKey ? t("settings.apiKeyPlaceholder") : "sk-or-v1-..."}
                   className="pr-10"
                 />
                 <button
@@ -103,12 +105,12 @@ export default function SettingsPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-400">
-                Obtain at <span className="text-blue-600">openrouter.ai</span>. Keys are encrypted and securely stored.
+                {t("settings.apiKeyHelp")}
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600">OpenRouter Model</label>
+              <label className="text-xs font-medium text-slate-600">{t("settings.aiModel")}</label>
               <Input
                 type="text"
                 value={model}
@@ -116,7 +118,7 @@ export default function SettingsPage() {
                 placeholder="openrouter/owl-alpha"
               />
               <p className="text-xs text-slate-400">
-                Model identifier for AI stock analysis (e.g., <code>openrouter/owl-alpha</code>, <code>google/gemini-2.5-pro</code>, <code>deepseek/deepseek-chat</code>).
+                {t("settings.aiModelHelp")}
               </p>
             </div>
           </CardContent>
@@ -125,29 +127,29 @@ export default function SettingsPage() {
         {/* Vnstock API Key */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Vnstock API Key / Premium Token</CardTitle>
+            <CardTitle className="text-sm">{t("settings.vnstockConfig")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-4 py-3">
               {settings?.hasVnstockKey ? (
                 <>
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-700">Vnstock Key configured</span>
+                  <span className="text-sm text-green-700">{t("settings.vnstockStatusConfigured")}</span>
                 </>
               ) : (
-                <span className="text-sm text-amber-700">⚠️ No Vnstock Key configured — stock data retrieval will not function</span>
+                <span className="text-sm text-amber-700">⚠️ {t("settings.vnstockStatusMissing")}</span>
               )}
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-slate-600">
-                {settings?.hasVnstockKey ? "Change Vnstock Key" : "Enter personal Vnstock Key"}
+                {settings?.hasVnstockKey ? (language === "vi" ? "Thay đổi Vnstock Key" : "Change Vnstock Key") : t("settings.vnstockLabel")}
               </label>
               <div className="relative">
                 <Input
                   type={showVnstockKey ? "text" : "password"}
                   value={vnstockKey}
                   onChange={(e) => setVnstockKey(e.target.value)}
-                  placeholder={settings?.hasVnstockKey ? "Leave blank to keep current key" : "vnstock_..."}
+                  placeholder={settings?.hasVnstockKey ? t("settings.apiKeyPlaceholder") : "vnstock_..."}
                   className="pr-10"
                 />
                 <button
@@ -159,7 +161,7 @@ export default function SettingsPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-400">
-                Avoid bandwidth limits by using your personal Vnstock API Key (Get it for free at <span className="text-blue-600">vnstocks.com</span>).
+                {t("settings.vnstockHelp")}
               </p>
             </div>
           </CardContent>
@@ -168,21 +170,21 @@ export default function SettingsPage() {
         {/* AI System Prompt */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">AI System Prompt</CardTitle>
+            <CardTitle className="text-sm">{t("settings.customPromptTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-slate-500">
-              Customize the role and behavior of the AI for stock analysis. Leave blank to use the system default.
+              {t("settings.customPromptHelp")}
             </p>
             <Textarea
               rows={10}
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
-              placeholder={`You are a financial analyst...\n\n(Leave blank to use default system prompt)`}
+              placeholder={t("settings.customPromptPlaceholder")}
               className="font-mono text-xs resize-y"
             />
             <p className="text-xs text-slate-400">
-              Note: Investment horizon <code>{'{horizon}'}</code> and risk appetite <code>{'{risk}'}</code> parameters will be dynamically injected during analysis.
+              {t("settings.customPromptNote", { horizon: "{horizon}", risk: "{risk}" })}
             </p>
           </CardContent>
         </Card>
@@ -190,11 +192,11 @@ export default function SettingsPage() {
         {/* Data Preferences */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm">Default Preferences</CardTitle>
+            <CardTitle className="text-sm">{t("settings.defaultsTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600">Default Source</label>
+              <label className="text-xs font-medium text-slate-600">{t("settings.defaultSource")}</label>
               <div className="flex gap-2">
                 {(["VCI", "KBS"] as const).map((s) => (
                   <button
@@ -212,12 +214,12 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-600">Default Interval</label>
+              <label className="text-xs font-medium text-slate-600">{t("settings.defaultInterval")}</label>
               <div className="flex gap-2">
                 {[
-                  { v: "1D", l: "Day" },
-                  { v: "1W", l: "Week" },
-                  { v: "1M", l: "Month" },
+                  { v: "1D", l: t("lookup.day") },
+                  { v: "1W", l: t("lookup.week") },
+                  { v: "1M", l: t("lookup.month") },
                 ].map(({ v, l }) => (
                   <button
                     key={v}
@@ -237,11 +239,11 @@ export default function SettingsPage() {
 
         <Button type="submit" disabled={update.isPending} className="w-full sm:w-auto">
           {update.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <><Loader2 className="h-4 w-4 animate-spin mr-2" /> {t("settings.buttonSaving")}</>
           ) : saved ? (
-            <><CheckCircle className="h-4 w-4" /> Saved!</>
+            <><CheckCircle className="h-4 w-4 mr-2" /> {t("common.saved")}</>
           ) : (
-            <><Save className="h-4 w-4" /> Save Settings</>
+            <><Save className="h-4 w-4 mr-2" /> {t("settings.buttonSave")}</>
           )}
         </Button>
       </form>
