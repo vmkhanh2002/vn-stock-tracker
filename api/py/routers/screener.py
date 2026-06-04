@@ -66,7 +66,7 @@ def get_screener_cache_from_turso(group: str) -> Optional[List[dict]]:
                         # Validate TTL
                         if time.time() - updated_at < CACHE_TTL:
                             return json.loads(data_str)
-    except Exception as e:
+    except BaseException as e:
         # Fail silently
         print(f"Error reading from Turso cache: {e}")
     return None
@@ -106,7 +106,7 @@ def save_screener_cache_to_turso(group: str, data: List[dict]) -> bool:
         with httpx.Client() as client:
             resp = client.post(db_url, json=payload, headers=headers, timeout=5.0)
             return resp.status_code == 200
-    except Exception as e:
+    except BaseException as e:
         print(f"Error saving to Turso cache: {e}")
         return False
 
@@ -146,7 +146,7 @@ def get_group_symbols(group: str) -> List[str]:
                     df = df.sort_values(by='re', ascending=False)
                 symbols = df['symbol'].tolist()
                 return symbols[:150]
-        except Exception:
+        except BaseException:
             pass
             
     # 2. Nếu là rổ chỉ số VN30/HNX30/VN100/VNMidCap...
@@ -155,7 +155,7 @@ def get_group_symbols(group: str) -> List[str]:
         res = l.symbols_by_group(group_upper)
         if res is not None and not res.empty:
             return res.tolist()
-    except Exception:
+    except BaseException:
         pass
         
     # Fallback nếu lỗi hoặc rổ lạ
@@ -163,7 +163,7 @@ def get_group_symbols(group: str) -> List[str]:
         df = l.symbols_by_group("VN30")
         if df is not None and not df.empty:
             return df.tolist()
-    except Exception:
+    except BaseException:
         pass
         
     return ["FPT", "HPG", "SSI", "VCB", "VIC", "VNM", "MSN", "MWG", "TCB", "VHM"]
@@ -202,7 +202,7 @@ def fetch_one_ratio(sym: str):
                     'rev_growth': get_val('net_revenue'),
                     'profit_growth': get_val('profit_after_tax_for_shareholders_of_the_parent_company')
                 }
-    except Exception:
+    except BaseException:
         pass
     return sym, None
 
@@ -261,7 +261,7 @@ def get_base_data(group: str) -> List[dict]:
             if now - mtime < CACHE_TTL:
                 with open(cache_path, "r", encoding="utf-8") as f:
                     return ensure_schema(clean_nan(json.load(f)))
-        except Exception:
+        except BaseException:
             pass
             
     # Lấy danh sách mã mới
@@ -318,7 +318,7 @@ def get_base_data(group: str) -> List[dict]:
                     'foreign_net': float(foreign_buy - foreign_sell),
                     'exchange': str(r.get('exchange', ''))
                 }
-    except Exception:
+    except BaseException:
         pass
 
     # Gộp dữ liệu
@@ -364,7 +364,7 @@ def get_base_data(group: str) -> List[dict]:
     try:
         with open(cache_path, "w", encoding="utf-8") as f:
             json.dump(cleaned_merged, f, ensure_ascii=False, indent=2)
-    except Exception:
+    except BaseException:
         pass
         
     return cleaned_merged

@@ -131,5 +131,5 @@ def get_indicators(req: IndicatorRequest):
         }
     except HTTPException:
         raise
-    except Exception as exc:
+    except BaseException as exc:
         raise HTTPException(500, f"indicators error: {exc}\n{traceback.format_exc()}")

@@ -40,7 +40,7 @@ def fetch_history(symbol: str, start: str, end: str, source: str, interval: str)
             if c in df.columns:
                 df[c] = to_vnd(df[c])
         return df.sort_values("time").reset_index(drop=True)
-    except Exception as e:
+    except BaseException as e:
         raise HTTPException(502, f"vnstock error: {e}")
 
 
@@ -106,7 +106,7 @@ def board_debug(source: str = "KBS"):
             "columns": list(df.columns),
             "sample": df.head(1).to_dict(orient="records"),
         }
-    except Exception as exc:
+    except BaseException as exc:
         import traceback
         return {"error": str(exc), "trace": traceback.format_exc()}
 
@@ -185,7 +185,7 @@ def get_board(req: BoardRequest):
 
     except HTTPException:
         raise
-    except Exception as exc:
+    except BaseException as exc:
         raise HTTPException(502, f"board error: {exc}\n{traceback.format_exc()}")
 
 
@@ -196,6 +196,6 @@ def get_group_symbols(group: str = Query("VN30")):
         symbols = fetch_symbols(group)
         # Giới hạn tối đa 150 mã để khớp với giới hạn của Board API
         return {"group": group, "symbols": symbols[:150], "count": len(symbols[:150])}
-    except Exception as e:
+    except BaseException as e:
         raise HTTPException(500, f"Error fetching group symbols: {str(e)}")
 

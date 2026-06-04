@@ -137,7 +137,7 @@ def build_context(df: pd.DataFrame, symbol: str, source: str = "VCI") -> str:
 - Tăng trưởng doanh thu YoY: {format_val(extracted['rev_growth'], '%', is_pct=True)}
 - Tăng trưởng lợi nhuận YoY: {format_val(extracted['profit_growth'], '%', is_pct=True)}
 """
-    except Exception as e:
+    except BaseException as e:
         fa_md = f"\n## Chỉ số tài chính cơ bản\n(Không lấy được dữ liệu tài chính cơ bản: {str(e)})\n"
 
     # 2. Fetch Foreign Trade/Flow data
@@ -152,7 +152,7 @@ def build_context(df: pd.DataFrame, symbol: str, source: str = "VCI") -> str:
                 for _, r in ff_df.head(5).iterrows():
                     rows_ff.append(f"- Ngày {r.get('date', '—')}: Ròng {r.get('net_value', 0):+,.0f} VNĐ (Mua: {r.get('buy_value', 0):,.0f} | Bán: {r.get('sell_value', 0):,.0f})")
                 foreign_md = "\n## Dòng tiền khối ngoại (5 phiên gần nhất)\n" + "\n".join(rows_ff) + "\n"
-    except Exception:
+    except BaseException:
         pass
 
     if not foreign_md:
@@ -180,7 +180,7 @@ def build_context(df: pd.DataFrame, symbol: str, source: str = "VCI") -> str:
 - Khối ngoại Mua: {buy_vol:,.0f} cổ phiếu | Bán: {sell_vol:,.0f} cổ phiếu
 - Ròng: {net_vol:+,.0f} cổ phiếu{net_flow_vnd}
 """
-        except Exception as e:
+        except BaseException as e:
             foreign_md = f"\n## Dòng tiền khối ngoại\n(Không lấy được dữ liệu dòng tiền khối ngoại: {str(e)})\n"
 
     ctx = f"""# Báo cáo phân tích kỹ thuật: {symbol}
