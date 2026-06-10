@@ -17,7 +17,7 @@ jobs:
   deploy-staging:
     name: Verify, Deploy & Smoke Test (Staging)
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
     env:
       REGISTRY: ghcr.io
       WEB_IMAGE_NAME: ${{ github.repository_owner }}/vn-stock-web
