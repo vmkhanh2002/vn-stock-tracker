@@ -17,7 +17,6 @@ permissions:
   packages: write
   id-token: write        # Cosign keyless signing via OIDC
   pull-requests: write   # Post preview URL comment on PRs
-  security-events: write # Upload SARIF to GitHub Security tab
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -60,13 +59,7 @@ jobs:
         run: pip install semgrep
 
       - name: Semgrep Scan
-        run: semgrep scan --config=auto --error --sarif --output semgrep.sarif
-
-      - name: Upload Semgrep Results to Security Tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: semgrep.sarif
+        run: semgrep scan --config=auto --error
 
   # ── IAC & CONFIGURATION SCANNING ───────────────────────────────────────────
   config-scan:
@@ -87,13 +80,7 @@ jobs:
         run: pip install checkov
 
       - name: Run Checkov
-        run: checkov -d . --framework dockerfile,yaml --soft-fail --output sarif 2>/dev/null > checkov.sarif || true
-
-      - name: Upload Checkov Results to Security Tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: checkov.sarif
+        run: checkov -d . --framework dockerfile,yaml --soft-fail --output cli
 
   # ── LINT & CODE QUALITY ─────────────────────────────────────────────────────
   lint-app:
@@ -199,35 +186,21 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest
-          format: 'sarif'
-          output: 'trivy-web.sarif'
+          format: 'table'
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-
-      - name: Upload Trivy Web Results to Security Tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-web.sarif'
 
       - name: Scan API Image (Trivy)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:latest
-          format: 'sarif'
-          output: 'trivy-api.sarif'
+          format: 'table'
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
-
-      - name: Upload Trivy API Results to Security Tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-api.sarif'
 
       # ── PUSH TO GHCR (AFTER PASSING SCANS) ──────────────────────────────────
       - name: Push Container Images
