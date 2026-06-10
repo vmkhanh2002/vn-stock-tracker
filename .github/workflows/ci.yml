@@ -7,11 +7,17 @@ on:
     branches: [ main ]
     types: [opened, synchronize, reopened, closed]
 
+# Cancel in-progress runs on the same branch (except main to avoid aborting deploys)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 permissions:
   contents: read
   packages: write
-  id-token: write        # Required for Cosign keyless signing via OIDC
-  pull-requests: write   # Required to post preview URL comment on PRs
+  id-token: write        # Cosign keyless signing via OIDC
+  pull-requests: write   # Post preview URL comment on PRs
+  security-events: write # Upload SARIF to GitHub Security tab
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -22,6 +28,7 @@ jobs:
     name: Secrets Scanning (Gitleaks)
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
+    timeout-minutes: 10
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -39,6 +46,7 @@ jobs:
     name: SAST Scanning (Semgrep)
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
+    timeout-minutes: 10
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -52,13 +60,20 @@ jobs:
         run: pip install semgrep
 
       - name: Semgrep Scan
-        run: semgrep scan --config=auto --error
+        run: semgrep scan --config=auto --error --sarif --output semgrep.sarif
+
+      - name: Upload Semgrep Results to Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
 
   # ── IAC & CONFIGURATION SCANNING ───────────────────────────────────────────
   config-scan:
     name: Configuration Scan (Checkov)
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
+    timeout-minutes: 10
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -72,13 +87,20 @@ jobs:
         run: pip install checkov
 
       - name: Run Checkov
-        run: checkov -d . --framework dockerfile,yaml --soft-fail --output cli
+        run: checkov -d . --framework dockerfile,yaml --soft-fail --output sarif 2>/dev/null > checkov.sarif || true
+
+      - name: Upload Checkov Results to Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov.sarif
 
   # ── LINT & CODE QUALITY ─────────────────────────────────────────────────────
   lint-app:
     name: Lint Next.js & Python Code
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
+    timeout-minutes: 10
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -98,12 +120,17 @@ jobs:
       - name: Next.js Lint
         run: npm run lint
 
+      - name: npm Audit
+        run: npm audit --audit-level=high
+        continue-on-error: true # informational until existing dep vulns are resolved
+
   # ── BUILD, SCAN & SIGN IMAGES ───────────────────────────────────────────────
   build-and-secure:
     name: Build, Scan and Sign Containers
     needs: [secrets-scan, sast-scan, lint-app]
     runs-on: ubuntu-latest
     if: github.event.action != 'closed'
+    timeout-minutes: 30
     env:
       REGISTRY: ghcr.io
       WEB_IMAGE_NAME: ${{ github.repository_owner }}/vn-stock-web
@@ -173,21 +200,35 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest
-          format: 'table'
+          format: 'sarif'
+          output: 'trivy-web.sarif'
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: 'CRITICAL'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy Web Results to Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-web.sarif'
 
       - name: Scan API Image (Trivy)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:latest
-          format: 'table'
+          format: 'sarif'
+          output: 'trivy-api.sarif'
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: 'CRITICAL'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy API Results to Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-api.sarif'
 
       # ── PUSH TO GHCR (AFTER PASSING SCANS) ──────────────────────────────────
       - name: Push Container Images
@@ -201,7 +242,7 @@ jobs:
       # ── GENERATE SBOM (SYFT) ────────────────────────────────────────────────
       - name: Generate SBOM (Web)
         if: github.event_name != 'pull_request'
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@v0.24.0
         with:
           image: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest
           format: spdx-json
@@ -209,7 +250,7 @@ jobs:
 
       - name: Generate SBOM (API)
         if: github.event_name != 'pull_request'
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@v0.24.0
         with:
           image: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:latest
           format: spdx-json
@@ -225,12 +266,14 @@ jobs:
   # ── DEPLOY PR PREVIEW (PULL REQUESTS ONLY) ──────────────────────────────────
   deploy-preview:
     name: Deploy PR Preview to Vercel
-    needs: [secrets-scan, sast-scan, lint-app]
+    needs: [build-and-secure]
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    timeout-minutes: 10
     env:
       VERCEL_ORG_ID: team_iQE4xRivacvtTo9IoqBeEdBs
       VERCEL_PROJECT_ID: prj_HlqoGYbQIRzKSpUFAxUb6p0WK72L
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -246,7 +289,11 @@ jobs:
       - name: Deploy Preview to Vercel
         id: deploy
         run: |
-          PREVIEW_URL=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --yes 2>&1 | grep -o 'https://[^ ]*\.vercel\.app' | tail -1)
+          DEPLOY_OUTPUT=$(vercel deploy --yes 2>&1)
+          PREVIEW_URL=$(echo "$DEPLOY_OUTPUT" | grep -o 'https://[^ ]*\.vercel\.app' | tail -1)
+          if [ -z "$PREVIEW_URL" ]; then
+            echo "Warning: Could not extract preview URL"
+          fi
           echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
 
       - name: Comment Preview URL on PR
@@ -259,7 +306,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## DevSecOps CI Passed — Preview Deployment Ready\n\n**Preview URL:** ${url}\n\n_Deployed after: secrets scan, SAST scan, lint — all passed._`
+              body: `## DevSecOps CI Passed — Preview Deployment Ready\n\n**Preview URL:** ${url}\n\n_Deployed after: secrets scan, SAST scan, lint, container scan — all passed._`
             });
 
   # ── DEPLOY TO VERCEL PRODUCTION (MAIN PUSH ONLY) ────────────────────────────
@@ -267,11 +314,12 @@ jobs:
     name: Deploy to Vercel Production
     needs: [build-and-secure]
     runs-on: ubuntu-latest
-    # Only deploy when all security gates pass AND pushing to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 10
     env:
       VERCEL_ORG_ID: team_iQE4xRivacvtTo9IoqBeEdBs
       VERCEL_PROJECT_ID: prj_HlqoGYbQIRzKSpUFAxUb6p0WK72L
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -285,7 +333,7 @@ jobs:
         run: npm install -g vercel@latest
 
       - name: Deploy to Vercel Production
-        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
+        run: vercel deploy --prod --yes
 
   # ── AUTO-CLOSE FAILED DEPENDABOT PRS ────────────────────────────────────────
   close-failed-dependabot-pr:
@@ -293,12 +341,12 @@ jobs:
     if: failure() && github.event.action != 'closed' && github.event.pull_request.user.login == 'dependabot[bot]'
     needs: [secrets-scan, sast-scan, lint-app, build-and-secure]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       pull-requests: write
     steps:
       - name: Close Pull Request
         run: |
-          echo "CI pipeline failed for Dependabot PR. Automatically closing PR."
           gh pr close ${{ github.event.pull_request.number }} --comment "Auto-closing this PR because the CI pipeline failed. Please check the logs."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -308,6 +356,7 @@ jobs:
     name: Delete Vercel Preview on PR Close
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    timeout-minutes: 5
     steps:
       - name: Delete Preview Deployments for Branch
         env:
