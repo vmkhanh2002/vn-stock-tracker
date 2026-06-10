@@ -5,6 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened, closed]
 
 permissions:
   contents: read
@@ -20,6 +21,7 @@ jobs:
   secrets-scan:
     name: Secrets Scanning (Gitleaks)
     runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -36,6 +38,7 @@ jobs:
   sast-scan:
     name: SAST Scanning (Semgrep)
     runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -55,6 +58,7 @@ jobs:
   config-scan:
     name: Configuration Scan (Checkov)
     runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -74,6 +78,7 @@ jobs:
   lint-app:
     name: Lint Next.js & Python Code
     runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v5
@@ -98,6 +103,7 @@ jobs:
     name: Build, Scan and Sign Containers
     needs: [secrets-scan, sast-scan, lint-app]
     runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
     env:
       REGISTRY: ghcr.io
       WEB_IMAGE_NAME: ${{ github.repository_owner }}/vn-stock-web
@@ -221,7 +227,7 @@ jobs:
     name: Deploy PR Preview to Vercel
     needs: [secrets-scan, sast-scan, lint-app]
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     env:
       VERCEL_ORG_ID: team_iQE4xRivacvtTo9IoqBeEdBs
       VERCEL_PROJECT_ID: prj_HlqoGYbQIRzKSpUFAxUb6p0WK72L
@@ -284,7 +290,7 @@ jobs:
   # ── AUTO-CLOSE FAILED DEPENDABOT PRS ────────────────────────────────────────
   close-failed-dependabot-pr:
     name: Close Failed Dependabot PR
-    if: failure() && github.event.pull_request.user.login == 'dependabot[bot]'
+    if: failure() && github.event.action != 'closed' && github.event.pull_request.user.login == 'dependabot[bot]'
     needs: [secrets-scan, sast-scan, lint-app, build-and-secure]
     runs-on: ubuntu-latest
     permissions:
@@ -296,3 +302,35 @@ jobs:
           gh pr close ${{ github.event.pull_request.number }} --comment "Auto-closing this PR because the CI pipeline failed. Please check the logs."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── CLEANUP VERCEL PREVIEW ON PR CLOSE ──────────────────────────────────────
+  cleanup-preview:
+    name: Delete Vercel Preview on PR Close
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    steps:
+      - name: Delete Preview Deployments for Branch
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          echo "Cleaning up Vercel preview deployments for branch: $BRANCH"
+
+          UIDS=$(curl -s \
+            "https://api.vercel.com/v6/deployments?teamId=team_iQE4xRivacvtTo9IoqBeEdBs&projectId=prj_HlqoGYbQIRzKSpUFAxUb6p0WK72L&target=preview&meta-githubCommitRef=${BRANCH}&limit=20" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            | jq -r '.deployments[].uid // empty')
+
+          if [ -z "$UIDS" ]; then
+            echo "No preview deployments found for branch: $BRANCH"
+            exit 0
+          fi
+
+          for uid in $UIDS; do
+            echo "Deleting: $uid"
+            curl -s -X DELETE \
+              "https://api.vercel.com/v13/deployments/${uid}?teamId=team_iQE4xRivacvtTo9IoqBeEdBs" \
+              -H "Authorization: Bearer $VERCEL_TOKEN" | jq -r '.uid + " deleted"'
+          done
+
+          echo "Done. All preview deployments for $BRANCH removed."
