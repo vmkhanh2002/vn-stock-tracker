@@ -218,6 +218,31 @@ jobs:
           cosign sign --yes ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:sha-${GITHUB_SHA::7}
           cosign sign --yes ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:sha-${GITHUB_SHA::7}
 
+  # ── DEPLOY TO VERCEL PRODUCTION ─────────────────────────────────────────────
+  deploy-vercel:
+    name: Deploy to Vercel (Production only)
+    needs: [build-and-secure]
+    runs-on: ubuntu-latest
+    # Only deploy when pushing to main — PRs and other branches skip this job
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      VERCEL_ORG_ID: team_iQE4xRivacvtTo9IoqBeEdBs
+      VERCEL_PROJECT_ID: prj_HlqoGYbQIRzKSpUFAxUb6p0WK72L
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Vercel Production
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
+
   # ── AUTO-CLOSE FAILED DEPENDABOT PRS ────────────────────────────────────────
   close-failed-dependabot-pr:
     name: Close Failed Dependabot PR
