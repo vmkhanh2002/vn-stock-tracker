@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────
 # Stage 1: deps
 # ─────────────────────────────────────────────
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 RUN apk add --no-cache openssl
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN npm ci --frozen-lockfile
 # ─────────────────────────────────────────────
 # Stage 2: builder
 # ─────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 RUN apk add --no-cache openssl
 WORKDIR /app
 
@@ -26,7 +26,7 @@ RUN npx prisma generate && npm run build
 # ─────────────────────────────────────────────
 # Stage 3: runner (production image)
 # ─────────────────────────────────────────────
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 RUN apk add --no-cache openssl
 WORKDIR /app
 
