@@ -6,6 +6,12 @@ services:
     image: postgres:16-alpine
     container_name: vnstock_db
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-vnstock}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vnstock_secret}

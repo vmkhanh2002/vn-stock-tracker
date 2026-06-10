@@ -36,18 +36,24 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const t = (key: string, variables?: Record<string, string | number>): string => {
     const dict = language === "vi" ? viDict : enDict
     const parts = key.split(".")
-    let current: any = dict
-    for (const part of parts) {
-      if (
-        current &&
-        typeof current === "object" &&
-        Object.prototype.hasOwnProperty.call(current, part)
-      ) {
-        current = current[part]
-      } else {
-        return key
+
+    const getNestedValue = (obj: any, pathParts: string[]): any => {
+      if (pathParts.length === 0) return obj
+      const [first, ...rest] = pathParts
+      if (first === "__proto__" || first === "constructor" || first === "prototype") {
+        return undefined
       }
+      if (
+        obj &&
+        typeof obj === "object" &&
+        Object.prototype.hasOwnProperty.call(obj, first)
+      ) {
+        return getNestedValue(obj[first], rest)
+      }
+      return undefined
     }
+
+    const current = getNestedValue(dict, parts)
     if (typeof current !== "string") {
       return key
     }
