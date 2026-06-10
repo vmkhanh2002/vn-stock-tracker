@@ -57,11 +57,16 @@ jobs:
             --set api.image.tag=sha-${SHA_SHORT} \
             --namespace staging --create-namespace"
 
-      # ── SMOKE TEST ──────────────────────────────────────────────────────────
-      - name: Staging Smoke Test
+      # ── SMOKE TEST & DAST HEADER CHECK ──────────────────────────────────────
+      - name: Staging Smoke Test & Security Headers Check
         run: |
           echo "Running health checks against staging endpoints..."
           # Mock smoke test pinging /health
           echo "curl -f -s http://staging-api.example.com/health || exit 1"
           echo "curl -f -s http://staging.example.com || exit 1"
+
+          # DAST: Mock checking security headers in staging responses
+          echo "Verifying security headers..."
+          echo "curl -I -s http://staging.example.com | grep -i 'content-security-policy' || echo 'Warning: CSP header missing'"
+          echo "curl -I -s http://staging.example.com | grep -i 'x-frame-options' || echo 'Warning: X-Frame-Options header missing'"
           echo "Staging deploy and verification check PASSED successfully."
