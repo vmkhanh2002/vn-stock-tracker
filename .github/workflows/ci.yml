@@ -11,6 +11,9 @@ permissions:
   packages: write
   id-token: write # Required for Cosign keyless signing via OIDC
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   # ── SECRETS SCANNING ────────────────────────────────────────────────────────
   secrets-scan:

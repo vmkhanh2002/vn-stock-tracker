@@ -249,11 +249,11 @@ npx prisma db push
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `NEXTAUTH_SECRET` | ✅ | Secret key for NextAuth session |
-| `NEXTAUTH_URL` | ✅ | Public URL of the app (e.g. https://...) |
-| `TURSO_DATABASE_URL` | ❌ (Optional) | Connection URL for Turso DB (`libsql://...`) for Edge Cache storage. Fallback to `/tmp` local files if blank. |
-| `TURSO_AUTH_TOKEN` | ❌ (Optional) | JWT Auth Token for Turso connection authentication. |
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `NEXTAUTH_SECRET` | Yes | Secret key for NextAuth session |
+| `NEXTAUTH_URL` | Yes | Public URL of the app (e.g. https://...) |
+| `TURSO_DATABASE_URL` | No (Optional) | Connection URL for Turso DB (`libsql://...`) for Edge Cache storage. Fallback to `/tmp` local files if blank. |
+| `TURSO_AUTH_TOKEN` | No (Optional) | JWT Auth Token for Turso connection authentication. |
 
 > `VNSTOCK_API_KEY` and `OPENROUTER_API_KEY` are **not** configured at the system level. Each user enters them in their personal Settings panel.
 

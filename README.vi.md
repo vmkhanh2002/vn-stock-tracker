@@ -249,11 +249,11 @@ npx prisma db push
 
 | Biến | Bắt buộc | Mô tả |
 |---|---|---|
-| `DATABASE_URL` | ✅ | Chuỗi kết nối PostgreSQL |
-| `NEXTAUTH_SECRET` | ✅ | Khóa bảo mật NextAuth session |
-| `NEXTAUTH_URL` | ✅ | URL công khai của trang web (VD: https://...) |
-| `TURSO_DATABASE_URL` | ❌ (Tùy chọn) | URL kết nối Turso DB (`libsql://...`) làm Edge Cache. Nếu để trống sẽ lưu cache tạm bằng file cục bộ tại `/tmp`. |
-| `TURSO_AUTH_TOKEN` | ❌ (Tùy chọn) | JWT Auth Token để xác thực kết nối Turso DB. |
+| `DATABASE_URL` | Có | Chuỗi kết nối PostgreSQL |
+| `NEXTAUTH_SECRET` | Có | Khóa bảo mật NextAuth session |
+| `NEXTAUTH_URL` | Có | URL công khai của trang web (VD: https://...) |
+| `TURSO_DATABASE_URL` | Không (Tùy chọn) | URL kết nối Turso DB (`libsql://...`) làm Edge Cache. Nếu để trống sẽ lưu cache tạm bằng file cục bộ tại `/tmp`. |
+| `TURSO_AUTH_TOKEN` | Không (Tùy chọn) | JWT Auth Token để xác thực kết nối Turso DB. |
 
 > `VNSTOCK_API_KEY` và `OPENROUTER_API_KEY` **không** cần khai báo trong biến môi trường hệ thống. Mỗi người dùng sẽ tự nhập trong màn hình Cài đặt của họ.
 
