@@ -68,7 +68,7 @@ jobs:
         run: pip install checkov
 
       - name: Run Checkov
-        run: checkov -d . --framework dockerfile,docker_compose --soft-fail --output cli
+        run: checkov -d . --framework dockerfile,yaml --soft-fail --output cli
 
   # ── LINT & CODE QUALITY ─────────────────────────────────────────────────────
   lint-app:
