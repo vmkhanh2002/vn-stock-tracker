@@ -151,7 +151,7 @@ Update lines 57-64 in `.github/workflows/cd-staging.yml` to include security hea
           # Mock smoke test pinging /health
           echo "curl -f -s http://staging-api.example.com/health || exit 1"
           echo "curl -f -s http://staging.example.com || exit 1"
-          
+
           # DAST: Mock checking security headers in staging responses
           echo "Verifying security headers..."
           echo "curl -I -s http://staging.example.com | grep -i 'content-security-policy' || echo 'Warning: CSP header missing'"
