@@ -27,6 +27,7 @@ export default [
       "out/**",
       "python-api/**",
       "api/py/**",
+      "venv/**",
       "*.bak"
     ]
   }

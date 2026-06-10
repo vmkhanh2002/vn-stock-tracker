@@ -38,7 +38,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const parts = key.split(".")
     let current: any = dict
     for (const part of parts) {
-      if (current && typeof current === "object" && part in current) {
+      if (
+        current &&
+        typeof current === "object" &&
+        Object.prototype.hasOwnProperty.call(current, part)
+      ) {
         current = current[part]
       } else {
         return key
@@ -52,7 +56,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     let text = current
     if (variables) {
       Object.entries(variables).forEach(([k, v]) => {
-        text = text.replace(new RegExp(`\\{${k}\\}`, "g"), String(v))
+        text = text.replaceAll(`{${k}}`, String(v))
       })
     }
     return text
