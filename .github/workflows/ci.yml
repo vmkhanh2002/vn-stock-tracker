@@ -217,3 +217,19 @@ jobs:
         run: |
           cosign sign --yes ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:sha-${GITHUB_SHA::7}
           cosign sign --yes ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:sha-${GITHUB_SHA::7}
+
+  # ── AUTO-CLOSE FAILED DEPENDABOT PRS ────────────────────────────────────────
+  close-failed-dependabot-pr:
+    name: Close Failed Dependabot PR
+    if: failure() && github.event.pull_request.user.login == 'dependabot[bot]'
+    needs: [secrets-scan, sast-scan, lint-app, build-and-secure]
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Close Pull Request
+        run: |
+          echo "CI pipeline failed for Dependabot PR. Automatically closing PR."
+          gh pr close ${{ github.event.pull_request.number }} --comment "Auto-closing this PR because the CI pipeline failed. Please check the logs."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
