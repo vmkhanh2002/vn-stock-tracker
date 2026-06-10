@@ -169,7 +169,7 @@ jobs:
 
       # ── TRIVY CONTAINER SCANNING ───────────────────────────────────────────
       - name: Scan Web Image (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest
           format: 'table'
@@ -179,7 +179,7 @@ jobs:
           severity: 'CRITICAL'
 
       - name: Scan API Image (Trivy)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:latest
           format: 'table'
