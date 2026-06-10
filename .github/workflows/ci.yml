@@ -9,7 +9,8 @@ on:
 permissions:
   contents: read
   packages: write
-  id-token: write # Required for Cosign keyless signing via OIDC
+  id-token: write        # Required for Cosign keyless signing via OIDC
+  pull-requests: write   # Required to post preview URL comment on PRs
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -148,8 +149,8 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          push: false # Do not push yet, scan first
-          load: true  # Load image locally so Trivy can scan it
+          push: false
+          load: true
           tags: ${{ steps.meta-web.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -168,17 +169,17 @@ jobs:
 
       # ── TRIVY CONTAINER SCANNING ───────────────────────────────────────────
       - name: Scan Web Image (Trivy)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest
           format: 'table'
-          exit-code: '1' # Fail pipeline if Critical vulnerabilities are found
+          exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL'
 
       - name: Scan API Image (Trivy)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:latest
           format: 'table'
@@ -198,6 +199,7 @@ jobs:
 
       # ── GENERATE SBOM (SYFT) ────────────────────────────────────────────────
       - name: Generate SBOM (Web)
+        if: github.event_name != 'pull_request'
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest
@@ -205,6 +207,7 @@ jobs:
           artifact-name: web-sbom.spdx.json
 
       - name: Generate SBOM (API)
+        if: github.event_name != 'pull_request'
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:latest
@@ -218,12 +221,52 @@ jobs:
           cosign sign --yes ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:sha-${GITHUB_SHA::7}
           cosign sign --yes ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:sha-${GITHUB_SHA::7}
 
-  # ── DEPLOY TO VERCEL PRODUCTION ─────────────────────────────────────────────
+  # ── DEPLOY PR PREVIEW (PULL REQUESTS ONLY) ──────────────────────────────────
+  deploy-preview:
+    name: Deploy PR Preview to Vercel
+    needs: [secrets-scan, sast-scan, lint-app]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    env:
+      VERCEL_ORG_ID: team_iQE4xRivacvtTo9IoqBeEdBs
+      VERCEL_PROJECT_ID: prj_HlqoGYbQIRzKSpUFAxUb6p0WK72L
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy Preview to Vercel
+        id: deploy
+        run: |
+          PREVIEW_URL=$(vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --yes 2>&1 | grep -o 'https://[^ ]*\.vercel\.app' | tail -1)
+          echo "preview_url=$PREVIEW_URL" >> $GITHUB_OUTPUT
+
+      - name: Comment Preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.preview_url }}';
+            if (!url) return;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ✅ DevSecOps CI Passed — Preview Deployment Ready\n\n🔗 **Preview URL:** ${url}\n\n_Deployed after: secrets scan, SAST scan, lint — all passed._`
+            });
+
+  # ── DEPLOY TO VERCEL PRODUCTION (MAIN PUSH ONLY) ────────────────────────────
   deploy-vercel:
-    name: Deploy to Vercel (Production only)
+    name: Deploy to Vercel Production
     needs: [build-and-secure]
     runs-on: ubuntu-latest
-    # Only deploy when pushing to main — PRs and other branches skip this job
+    # Only deploy when all security gates pass AND pushing to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       VERCEL_ORG_ID: team_iQE4xRivacvtTo9IoqBeEdBs
