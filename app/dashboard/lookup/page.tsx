@@ -33,8 +33,8 @@ function getSignals(last: OHLCVRow, prev: OHLCVRow, language: string, t: any) {
   const signals: { label: string; signal: "bullish" | "bearish" | "neutral"; value?: string }[] = []
   if (last.ma10 && last.ma20) {
     signals.push({
-      label: last.close > last.ma20 
-        ? (language === "vi" ? "Trên MA20" : "Above MA20") 
+      label: last.close > last.ma20
+        ? (language === "vi" ? "Trên MA20" : "Above MA20")
         : (language === "vi" ? "Dưới MA20" : "Below MA20"),
       signal: last.close > last.ma20 ? "bullish" : "bearish",
     })
@@ -48,8 +48,8 @@ function getSignals(last: OHLCVRow, prev: OHLCVRow, language: string, t: any) {
   }
   if (last.macdHist != null) {
     signals.push({
-      label: last.macdHist > 0 
-        ? (language === "vi" ? "MACD Tăng giá" : "MACD Bullish") 
+      label: last.macdHist > 0
+        ? (language === "vi" ? "MACD Tăng giá" : "MACD Bullish")
         : (language === "vi" ? "MACD Giảm giá" : "MACD Bearish"),
       signal: last.macdHist > 0 ? "bullish" : "bearish",
       value: last.macdHist.toFixed(2),
@@ -64,10 +64,10 @@ function getSignals(last: OHLCVRow, prev: OHLCVRow, language: string, t: any) {
   }
   if (last.stochK != null) {
     signals.push({
-      label: last.stochK > 80 
-        ? (language === "vi" ? "Stoch Quá mua" : "Stoch Overbought") 
-        : last.stochK < 20 
-        ? (language === "vi" ? "Stoch Quá bán" : "Stoch Oversold") 
+      label: last.stochK > 80
+        ? (language === "vi" ? "Stoch Quá mua" : "Stoch Overbought")
+        : last.stochK < 20
+        ? (language === "vi" ? "Stoch Quá bán" : "Stoch Oversold")
         : (language === "vi" ? "Stoch Trung tính" : "Stoch Neutral"),
       signal: last.stochK > 80 ? "bearish" : last.stochK < 20 ? "bullish" : "neutral",
       value: `K${last.stochK.toFixed(0)}`,
@@ -384,4 +384,3 @@ export default function LookupPage() {
     </div>
   )
 }
-

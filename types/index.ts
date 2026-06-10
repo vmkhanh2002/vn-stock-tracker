@@ -89,4 +89,3 @@ export interface ScreenerRow {
   rev_growth: number | null
   profit_growth: number | null
 }
-

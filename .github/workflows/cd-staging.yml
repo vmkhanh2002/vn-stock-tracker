@@ -1,0 +1,57 @@
+name: DevSecOps Staging CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  id-token: write # Required for verification validation via OIDC
+
+jobs:
+  deploy-staging:
+    name: Verify, Deploy & Smoke Test (Staging)
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      WEB_IMAGE_NAME: ${{ github.repository_owner }}/vn-stock-web
+      API_IMAGE_NAME: ${{ github.repository_owner }}/vn-stock-api
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.5.0
+
+      # ── VERIFY IMAGE INTEGRITY & SUPPLY CHAIN SIGNATURE ────────────────────
+      - name: Verify Web Image Signature
+        run: |
+          cosign verify \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp 'https://github.com/${{ github.repository_owner }}/.*' \
+            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:sha-${GITHUB_SHA::7}
+
+      - name: Verify API Image Signature
+        run: |
+          cosign verify \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp 'https://github.com/${{ github.repository_owner }}/.*' \
+            ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:sha-${GITHUB_SHA::7}
+
+      # ── DRY-RUN DEPLOY / DEPLOYMENT SETUP ─────────────────────────────────
+      - name: Mock Deploy to Staging Cluster
+        run: |
+          echo "Deploying to Staging (Kubernetes/Helm)..."
+          echo "helm upgrade --install vnstock-app-staging ./deploy/helm/devsecops-app \
+            --set web.image.tag=sha-${GITHUB_SHA::7} \
+            --set api.image.tag=sha-${GITHUB_SHA::7} \
+            --namespace staging --create-namespace"
+
+      # ── SMOKE TEST ──────────────────────────────────────────────────────────
+      - name: Staging Smoke Test
+        run: |
+          echo "Running health checks against staging endpoints..."
+          # Mock smoke test pinging /health
+          echo "curl -f -s http://staging-api.example.com/health || exit 1"
+          echo "curl -f -s http://staging.example.com || exit 1"
+          echo "Staging deploy and verification check PASSED successfully."

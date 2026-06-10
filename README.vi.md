@@ -2,7 +2,7 @@
 
 **Tiếng Việt** | [English](README.md)
 
-Nền tảng phân tích chứng khoán Việt Nam tích hợp AI, được xây dựng trên mô hình **Next.js 16 + FastAPI + vnstock**.  
+Nền tảng phân tích chứng khoán Việt Nam tích hợp AI, được xây dựng trên mô hình **Next.js 16 + FastAPI + vnstock**.
 Mỗi người dùng tự quản lý API keys cá nhân — không nghẽn băng thông, không lưu cứng keys hệ thống.
 
 **Live Demo:** https://vn-stock-tracker-swart.vercel.app
@@ -61,6 +61,43 @@ Thư viện vnstock              ← Thu thập dữ liệu chứng khoán VN (k
 | **Khung thời gian mặc định**| 1D / 1W / 1M |
 
 > **Vnstock API Key là bắt buộc** — tất cả các yêu cầu dữ liệu không có key sẽ bị từ chối (401).
+
+---
+
+## DevSecOps & Security Pipeline
+
+Dự án này tích hợp các cổng bảo mật (security gates) và kiểm tra chuỗi cung ứng chuẩn công nghiệp:
+
+| Lớp bảo mật | Công cụ & Kiểm tra | Mục đích |
+|---|---|---|
+| **Secret Scanning** | **Gitleaks** | Ngăn chặn rò rỉ API key, thông tin nhạy cảm ở local (pre-commit) và CI. |
+| **SAST** | **Semgrep & Ruff** | Quét mã nguồn Python và TypeScript để phát hiện các lỗ hổng bảo mật. |
+| **SCA** | **Trivy** | Kiểm tra lỗ hổng bảo mật trong các thư viện bên thứ ba (dependencies). |
+| **Container Hardening** | **Non-Root Images** | Next.js chạy dưới user `nextjs` (UID 1001), FastAPI chạy dưới user `appuser` (UID 10001). |
+| **Configuration Scan** | **Checkov** | Quét Dockerfile và Docker Compose để phát hiện các cấu hình không an toàn. |
+| **Supply Chain** | **Syft & Cosign** | Tạo tài liệu SBOM và ký số container image thông qua kết nối OIDC bảo mật. |
+| **Policy as Code** | **Open Policy Agent (OPA)** | Định nghĩa các policy bằng Rego để kiểm soát cấu hình deploy Kubernetes. |
+
+Chi tiết về các quyết định thiết kế được tài liệu hóa tại [Architecture Decision Records (ADRs)](file:///c:/Users/boyva/Downloads/vn-stock-tracker/docs/architecture.md) và [Threat Model](file:///c:/Users/boyva/Downloads/vn-stock-tracker/security/threat-model.md).
+
+### Quy trình vận hành DevSecOps (Workflow)
+
+Khi phát triển tính năng mới hoặc cập nhật hạ tầng:
+
+1. **Phát triển ở Local**:
+   - Chạy `pre-commit` ở local để đảm bảo không rò rỉ secrets, code được format và lint sạch sẽ trước khi commit.
+2. **Tạo Pull Request (PR)**:
+   - Mở PR vào nhánh `main`.
+   - Pipeline CI tự động kích hoạt: Quét Secrets (Gitleaks) -> SAST (Semgrep) -> Lint -> Cấu hình (Checkov) -> Build & Quét ảnh Docker (Trivy).
+   - Chỉ được merge khi tất cả các kiểm tra đều PASS và có approve từ Reviewer.
+3. **Merge Staging**:
+   - Code sau khi merge vào `main` tự động kích hoạt pipeline deploy Staging.
+   - Xác minh chữ ký số ảnh Docker bằng Cosign.
+   - Deploy thử nghiệm và chạy các bài smoke test kiểm tra dịch vụ.
+4. **Deploy Production**:
+   - Thực hiện kích hoạt thủ công (manual trigger) pipeline `cd-prod.yml` từ GitHub.
+   - Đảm bảo có xác nhận phê duyệt (approval gate) của trưởng nhóm.
+   - Kiểm tra chữ ký số ảnh Docker bằng Cosign trước khi chạy thật.
 
 ---
 

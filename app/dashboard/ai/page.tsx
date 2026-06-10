@@ -200,11 +200,11 @@ function ScanPanel() {
         const aiRes  = await fetch("/api/ai/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            context: ctxRes.context, 
-            symbol: sym, 
-            horizon: language === "vi" ? "ngắn hạn" : "Short-term", 
-            risk: language === "vi" ? "trung bình" : "Medium", 
+          body: JSON.stringify({
+            context: ctxRes.context,
+            symbol: sym,
+            horizon: language === "vi" ? "ngắn hạn" : "Short-term",
+            risk: language === "vi" ? "trung bình" : "Medium",
             mode: "scan",
             lang: language,
           }),
@@ -225,10 +225,10 @@ function ScanPanel() {
     BAN: "bg-red-100 text-red-700",
     GIU: "bg-amber-100 text-amber-700",
   }
-  const recLabel: Record<Recommendation, string> = { 
-    MUA: language === "vi" ? "MUA" : "BUY", 
-    BAN: language === "vi" ? "BÁN" : "SELL", 
-    GIU: language === "vi" ? "NẮM GIỮ" : "HOLD" 
+  const recLabel: Record<Recommendation, string> = {
+    MUA: language === "vi" ? "MUA" : "BUY",
+    BAN: language === "vi" ? "BÁN" : "SELL",
+    GIU: language === "vi" ? "NẮM GIỮ" : "HOLD"
   }
 
   return (

@@ -2,7 +2,7 @@
 
 [Tiếng Việt](README.vi.md) | **English**
 
-A Vietnamese stock analysis platform integrated with AI, built using **Next.js 16 + FastAPI + vnstock**.  
+A Vietnamese stock analysis platform integrated with AI, built using **Next.js 16 + FastAPI + vnstock**.
 Each user manages their own personal API keys — no bandwidth bottlenecks, no hardcoded keys.
 
 **Live Demo:** https://vn-stock-tracker-swart.vercel.app
@@ -61,6 +61,43 @@ vnstock library               ← VN market data retrieval (user key)
 | **Default Interval** | 1D / 1W / 1M |
 
 > **Vnstock API Key is required** — all requests without a key will be rejected (401).
+
+---
+
+## DevSecOps & Security Pipeline
+
+This project integrates industry-standard security scanning and supply chain gates:
+
+| Security Layer | Tools & Checks | Purpose |
+|---|---|---|
+| **Secret Scanning** | **Gitleaks** | Prevents credentials leaks locally (via pre-commit) and in CI. |
+| **SAST** | **Semgrep & Ruff** | Scans Python and TypeScript code for vulnerability patterns. |
+| **SCA** | **Trivy** | Audits third-party dependency vulnerabilities. |
+| **Container Hardening** | **Non-Root Images** | Next.js runs as `nextjs` (UID 1001), FastAPI runs as `appuser` (UID 10001). |
+| **Configuration Scan** | **Checkov** | Audits Dockerfiles and Docker Compose files for misconfigurations. |
+| **Supply Chain** | **Syft & Cosign** | Generates SBOMs and signs built images keylessly using GitHub OIDC. |
+| **Policy as Code** | **Open Policy Agent (OPA)** | Defines Rego policies checking Kubernetes deployment context. |
+
+Detailed decisions are documented in the [Architecture Decision Records (ADRs)](file:///c:/Users/boyva/Downloads/vn-stock-tracker/docs/architecture.md) and [Threat Model](file:///c:/Users/boyva/Downloads/vn-stock-tracker/security/threat-model.md).
+
+### Future DevSecOps Workflow
+
+When developing features or updating infrastructure:
+
+1. **Local Development**:
+   - Run `pre-commit` locally to ensure zero secrets, correct formatting, and linting.
+2. **Pull Request (PR)**:
+   - Open a PR to `main`.
+   - CI Pipeline runs: Gitleaks -> Semgrep -> Lint -> Checkov -> Docker Build & Scan (Trivy).
+   - PR must be approved and all checks passed before merge.
+3. **Staging & Main Merge**:
+   - Merging to `main` triggers Staging deployment.
+   - Image signature is verified via Cosign.
+   - Deploy dry-run & smoke tests run on staging.
+4. **Production Release**:
+   - Release manager triggers `cd-prod.yml` manually via GitHub Actions.
+   - Manual approval gate must be signed off.
+   - Deploy running containers verified by Cosign.
 
 ---
 

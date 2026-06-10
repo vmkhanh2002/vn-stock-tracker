@@ -1,25 +1,37 @@
 FROM python:3.11-slim
 WORKDIR /app
 
+# Python runtime optimizations
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    VNSTOCK_SHOW_ADS=0 \
+    VNSTOCK_DISABLE_NOTICE=1 \
+    HOME=/tmp \
+    TMPDIR=/tmp
+
+# Create a secure non-root user and group
+RUN groupadd --gid 10001 appgroup \
+ && useradd --uid 10001 --gid 10001 --shell /bin/bash --create-home appuser
+
 # System deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
  && rm -rf /var/lib/apt/lists/*
 
-# Python deps
+# Install dependencies
 COPY api/py/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# App source
+# Copy source code and set ownership
 COPY api/py/ ./
+RUN chown -R appuser:appgroup /app
 
-# Disable vnstock ads/notices
-ENV VNSTOCK_SHOW_ADS=0
-ENV VNSTOCK_DISABLE_NOTICE=1
-ENV HOME=/tmp
-ENV TMPDIR=/tmp
+# Set up runtime writable directories for vnstock cache
+RUN mkdir -p /tmp/.vnstock \
+ && chown -R appuser:appgroup /tmp/.vnstock
 
-RUN mkdir -p /tmp/.vnstock
+# Switch to the non-root user
+USER appuser
 
 EXPOSE 8000
 

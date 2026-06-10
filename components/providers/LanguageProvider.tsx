@@ -47,7 +47,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     if (typeof current !== "string") {
       return key
     }
-    
+
     // Inject dynamic variables if provided
     let text = current
     if (variables) {

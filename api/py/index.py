@@ -2,8 +2,11 @@
 FastAPI app — deployed as Vercel Serverless Function
 All routes are prefixed /api/py/ by vercel.json rewrites
 """
+# ruff: noqa: E402
+
 import os
 import sys
+
 os.environ.setdefault("HOME", "/tmp")
 os.environ.setdefault("TMPDIR", "/tmp")
 os.makedirs("/tmp/.vnstock", exist_ok=True)
@@ -12,9 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import warnings
 from datetime import date
 
-import pandas as pd
-import numpy as np
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -37,23 +38,33 @@ app.add_middleware(
 async def add_vnstock_key_middleware(request, call_next):
     # Exempt health check endpoint
     path = request.url.path.replace("/api/py", "")
-    exempt = path in ("/health", "/", "") or path.startswith("/docs") or path.startswith("/openapi")
+    exempt = (
+        path in ("/health", "/", "")
+        or path.startswith("/docs")
+        or path.startswith("/openapi")
+    )
 
-    key = request.headers.get("x-vnstock-api-key") or request.headers.get("X-Vnstock-Api-Key")
+    key = request.headers.get("x-vnstock-api-key") or request.headers.get(
+        "X-Vnstock-Api-Key"
+    )
     if not key:
         key = request.cookies.get("vnstock_api_key")
 
     if not key and not exempt:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(
             status_code=401,
-            content={"error": "Vnstock API Key là bắt buộc. Vui lòng thêm key cá nhân tại Settings."}
+            content={
+                "error": "Vnstock API Key là bắt buộc. Vui lòng thêm key cá nhân tại Settings."
+            },
         )
 
     if key:
         os.environ["VNSTOCK_API_KEY"] = key
         try:
             from vnstock import change_api_key
+
             change_api_key(key)
         except Exception:
             pass
@@ -66,8 +77,8 @@ from routers.ai_context import router as ai_router
 from routers.screener import router as screener_router
 
 app.include_router(stock_router, prefix="/stock")
-app.include_router(ind_router,   prefix="/indicators")
-app.include_router(ai_router,    prefix="/ai-context")
+app.include_router(ind_router, prefix="/indicators")
+app.include_router(ai_router, prefix="/ai-context")
 app.include_router(screener_router, prefix="/screener")
 
 
@@ -87,9 +98,8 @@ class _StripPrefix:
         if scope["type"] in ("http", "websocket"):
             path = scope.get("path", "")
             if path.startswith(self.prefix):
-                stripped = path[len(self.prefix):] or "/"
-                scope = {**scope, "path": stripped,
-                         "raw_path": stripped.encode()}
+                stripped = path[len(self.prefix) :] or "/"
+                scope = {**scope, "path": stripped, "raw_path": stripped.encode()}
         await self.app(scope, receive, send)
 
 

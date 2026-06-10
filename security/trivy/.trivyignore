@@ -1,0 +1,10 @@
+# Trivy Vulnerability Suppression File
+# DevSecOps Practice: Document why a vulnerability is suppressed rather than ignoring silently.
+
+# CVE-2023-45853: zlib vulnerability in alpine. Minor issue without active exploit path in standalone.
+# Ignored: No patch currently available for base Alpine node runner. Reviewed and accepted risk.
+CVE-2023-45853
+
+# CVE-2024-21503: Minor package dependency vulnerability.
+# Ignored: Dev dependency only, not packaged in the final standalone runtime image.
+CVE-2024-21503

@@ -64,7 +64,7 @@ export default function RealtimePage() {
         <h1 className="text-lg font-semibold text-slate-900 tracking-tight">
           {language === "vi" ? `Bảng giá trực tuyến (${selectedGroupLabel})` : `Real-time Prices (${selectedGroupLabel})`}
         </h1>
-        
+
         {/* Dropdown chọn rổ cổ phiếu */}
         <select
           value={group}

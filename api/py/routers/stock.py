@@ -3,6 +3,7 @@ GET /api/py/stock/history   → OHLCV history
 GET /api/py/stock/realtime  → latest quote
 POST /api/py/stock/board    → batch real-time board via Trading.price_board()
 """
+
 import re
 from datetime import date
 from typing import Literal
@@ -26,9 +27,12 @@ def to_vnd(series: pd.Series) -> pd.Series:
     return series.apply(lambda x: float(x) * 1000 if float(x) < 10_000 else float(x))
 
 
-def fetch_history(symbol: str, start: str, end: str, source: str, interval: str) -> pd.DataFrame:
+def fetch_history(
+    symbol: str, start: str, end: str, source: str, interval: str
+) -> pd.DataFrame:
     try:
         from vnstock import Quote
+
         df = Quote(symbol=symbol, source=source).history(
             start=start, end=end, interval=interval
         )
@@ -99,6 +103,7 @@ def _safe_float(val, default: float = 0.0) -> float:
 def board_debug(source: str = "KBS"):
     try:
         from vnstock import Trading
+
         trading = Trading(source=source, symbol="VNM")
         df = trading.price_board(symbols_list=["VNM", "VCB"])
         df.columns = [str(c).lower().replace(" ", "_") for c in df.columns]
@@ -108,12 +113,14 @@ def board_debug(source: str = "KBS"):
         }
     except BaseException as exc:
         import traceback
+
         return {"error": str(exc), "trace": traceback.format_exc()}
 
 
 @router.post("/board")
 def get_board(req: BoardRequest):
     import traceback
+
     today = str(date.today())
 
     try:
@@ -127,8 +134,7 @@ def get_board(req: BoardRequest):
 
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = [
-                "_".join(str(x) for x in col).lower()
-                for col in df.columns.values
+                "_".join(str(x) for x in col).lower() for col in df.columns.values
             ]
         else:
             df.columns = [str(c).lower().replace(" ", "_") for c in df.columns]
@@ -137,48 +143,55 @@ def get_board(req: BoardRequest):
         result = []
 
         for row in records:
-            sym = str(
-                row.get("symbol") or row.get("listing_symbol", "")
-            ).strip().upper()
+            sym = (
+                str(row.get("symbol") or row.get("listing_symbol", "")).strip().upper()
+            )
             if not sym:
                 continue
 
             if req.source == "KBS":
                 open_ = _safe_float(row.get("open_price") or row.get("reference_price"))
-                high  = _safe_float(row.get("high_price"))
-                low   = _safe_float(row.get("low_price"))
+                high = _safe_float(row.get("high_price"))
+                low = _safe_float(row.get("low_price"))
                 close = _safe_float(row.get("close_price") or row.get("match_price"))
-                vol   = _safe_float(row.get("volume_accumulated") or row.get("volume_last"))
-                change     = _safe_float(row.get("price_change"))
+                vol = _safe_float(
+                    row.get("volume_accumulated") or row.get("volume_last")
+                )
+                change = _safe_float(row.get("price_change"))
                 change_pct = round(_safe_float(row.get("percent_change")), 2)
             else:
                 open_ = _safe_float(
                     row.get("listing_ref_price") or row.get("match_open_price")
                 )
-                high  = _safe_float(row.get("match_highest"))
-                low   = _safe_float(row.get("match_lowest"))
+                high = _safe_float(row.get("match_highest"))
+                low = _safe_float(row.get("match_lowest"))
                 close = _safe_float(row.get("match_match_price"))
-                vol   = _safe_float(
+                vol = _safe_float(
                     row.get("match_accumulated_volume") or row.get("match_match_vol")
                 )
-                change     = close - open_
-                change_pct = round((change / open_ * 100) if open_ else 0.0, 2)
-
-            if 0 < close < 10_000:
-                open_ *= 1000; high *= 1000; low *= 1000; close *= 1000
                 change = close - open_
                 change_pct = round((change / open_ * 100) if open_ else 0.0, 2)
 
-            result.append({
-                "symbol":    sym,
-                "open":      open_,
-                "high":      high,
-                "low":       low,
-                "close":     close,
-                "volume":    vol,
-                "change":    round(change, 2),
-                "changePct": change_pct,
-            })
+            if 0 < close < 10_000:
+                open_ *= 1000
+                high *= 1000
+                low *= 1000
+                close *= 1000
+                change = close - open_
+                change_pct = round((change / open_ * 100) if open_ else 0.0, 2)
+
+            result.append(
+                {
+                    "symbol": sym,
+                    "open": open_,
+                    "high": high,
+                    "low": low,
+                    "close": close,
+                    "volume": vol,
+                    "change": round(change, 2),
+                    "changePct": change_pct,
+                }
+            )
 
         result.sort(key=lambda r: r["symbol"])
         return {"date": today, "data": result}
@@ -193,9 +206,9 @@ def get_board(req: BoardRequest):
 def get_group_symbols(group: str = Query("VN30")):
     try:
         from routers.screener import get_group_symbols as fetch_symbols
+
         symbols = fetch_symbols(group)
         # Giới hạn tối đa 150 mã để khớp với giới hạn của Board API
         return {"group": group, "symbols": symbols[:150], "count": len(symbols[:150])}
     except BaseException as e:
         raise HTTPException(500, f"Error fetching group symbols: {str(e)}")
-

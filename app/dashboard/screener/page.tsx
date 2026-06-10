@@ -27,7 +27,7 @@ export default function ScreenerPage() {
   const [pctChangeMin, setPctChangeMin] = useState<string>("")
   const [pctChangeMax, setPctChangeMax] = useState<string>("")
   const [volumeMin, setVolumeMin] = useState<string>("")
-  
+
   const [preset, setPreset] = useState<PresetType>("none")
   const [sortField, setSortField] = useState<keyof ScreenerRow | null>(null)
   const [sortAsc, setSortAsc] = useState<boolean>(true)
@@ -120,9 +120,9 @@ export default function ScreenerPage() {
     if (isWatched) {
       removeFromWatchlist.mutate({ symbol })
     } else {
-      addToWatchlist.mutate({ 
-        symbol, 
-        note: language === "vi" ? "Thêm từ bộ lọc cổ phiếu" : "Added from stock screener" 
+      addToWatchlist.mutate({
+        symbol,
+        note: language === "vi" ? "Thêm từ bộ lọc cổ phiếu" : "Added from stock screener"
       })
     }
   }
@@ -148,7 +148,7 @@ export default function ScreenerPage() {
     if (typeof aVal === 'string' && typeof bVal === 'string') {
       return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
     }
-    
+
     return sortAsc ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number)
   })
 
@@ -164,27 +164,27 @@ export default function ScreenerPage() {
 
       <div className="flex flex-wrap gap-2 items-center">
         <span className="text-sm text-slate-500 font-medium">{t("screener.presets")}:</span>
-        <Button 
-          variant={preset === "value" ? "default" : "outline"} 
-          size="sm" 
+        <Button
+          variant={preset === "value" ? "default" : "outline"}
+          size="sm"
           onClick={() => applyPreset("value")}
           className="h-8 gap-1.5"
         >
           <BadgeDollarSign className="h-4 w-4" />
           {t("screener.presetValue")}
         </Button>
-        <Button 
-          variant={preset === "growth" ? "default" : "outline"} 
-          size="sm" 
+        <Button
+          variant={preset === "growth" ? "default" : "outline"}
+          size="sm"
           onClick={() => applyPreset("growth")}
           className="h-8 gap-1.5"
         >
           <TrendingUp className="h-4 w-4" />
           {t("screener.presetGrowth")}
         </Button>
-        <Button 
-          variant={preset === "safety" ? "default" : "outline"} 
-          size="sm" 
+        <Button
+          variant={preset === "safety" ? "default" : "outline"}
+          size="sm"
           onClick={() => applyPreset("safety")}
           className="h-8 gap-1.5"
         >
@@ -192,9 +192,9 @@ export default function ScreenerPage() {
           {t("screener.presetSafety")}
         </Button>
         {preset !== "none" && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => applyPreset("none")}
             className="h-8 text-xs text-slate-500 hover:text-slate-950"
           >
@@ -237,20 +237,20 @@ export default function ScreenerPage() {
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{language === "vi" ? "Chỉ số P/E & P/B" : "P/E & P/B Ratios"}</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <Input 
-                    type="number" 
-                    step="0.1" 
-                    value={peMax} 
-                    onChange={(e) => { setPeMax(e.target.value); setPreset("none"); }} 
-                    placeholder={t("screener.maxPE")} 
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={peMax}
+                    onChange={(e) => { setPeMax(e.target.value); setPreset("none"); }}
+                    placeholder={t("screener.maxPE")}
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
-                  <Input 
-                    type="number" 
-                    step="0.1" 
-                    value={pbMax} 
-                    onChange={(e) => { setPbMax(e.target.value); setPreset("none"); }} 
-                    placeholder={t("screener.maxPB")} 
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={pbMax}
+                    onChange={(e) => { setPbMax(e.target.value); setPreset("none"); }}
+                    placeholder={t("screener.maxPB")}
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
                 </div>
@@ -260,20 +260,20 @@ export default function ScreenerPage() {
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">ROE & ROA (%)</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <Input 
-                    type="number" 
-                    step="0.5" 
-                    value={roeMin} 
-                    onChange={(e) => { setRoeMin(e.target.value); setPreset("none"); }} 
-                    placeholder={t("screener.minROE")} 
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={roeMin}
+                    onChange={(e) => { setRoeMin(e.target.value); setPreset("none"); }}
+                    placeholder={t("screener.minROE")}
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
-                  <Input 
-                    type="number" 
-                    step="0.5" 
-                    value={roaMin} 
-                    onChange={(e) => { setRoaMin(e.target.value); setPreset("none"); }} 
-                    placeholder={t("screener.minROA")} 
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={roaMin}
+                    onChange={(e) => { setRoaMin(e.target.value); setPreset("none"); }}
+                    placeholder={t("screener.minROA")}
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
                 </div>
@@ -283,19 +283,19 @@ export default function ScreenerPage() {
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{language === "vi" ? "Biến động giá & Khối lượng (Thời gian thực)" : "Price Change & Vol (Real-time)"}</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <Input 
-                    type="number" 
-                    step="0.1" 
-                    value={pctChangeMin} 
-                    onChange={(e) => { setPctChangeMin(e.target.value); setPreset("none"); }} 
-                    placeholder={t("screener.minPriceChange")} 
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={pctChangeMin}
+                    onChange={(e) => { setPctChangeMin(e.target.value); setPreset("none"); }}
+                    placeholder={t("screener.minPriceChange")}
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
-                  <Input 
-                    type="number" 
-                    value={volumeMin} 
-                    onChange={(e) => { setVolumeMin(e.target.value); setPreset("none"); }} 
-                    placeholder={t("screener.minVolume")} 
+                  <Input
+                    type="number"
+                    value={volumeMin}
+                    onChange={(e) => { setVolumeMin(e.target.value); setPreset("none"); }}
+                    placeholder={t("screener.minVolume")}
                     className="h-9 placeholder:text-slate-300 text-sm"
                   />
                 </div>
@@ -392,7 +392,7 @@ export default function ScreenerPage() {
                   {sortedResults.map((r) => {
                     const isWatched = watchlistItems.some((w) => w.symbol === r.symbol)
                     const chgColor = r.pct_change > 0 ? "text-emerald-600" : r.pct_change < 0 ? "text-red-500" : "text-slate-500"
-                    
+
                     return (
                       <tr key={r.symbol} className="hover:bg-slate-50/50 transition-colors">
                         {/* 1. Nút Watchlist */}

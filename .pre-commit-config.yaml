@@ -1,0 +1,37 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.2
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff
+        args: [ --fix, "--ignore=E722,E741,E702" ]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint (Next.js)
+        entry: npm run lint
+        language: system
+        files: \.[jt]sx?$
+        pass_filenames: false
+
+  - repo: https://github.com/bridgecrewio/checkov.git
+    rev: 3.2.100
+    hooks:
+      - id: checkov
+        verbose: true
+        args: [--directory, ., --compact]
