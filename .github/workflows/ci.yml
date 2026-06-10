@@ -271,8 +271,8 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
     timeout-minutes: 10
     env:
-      VERCEL_ORG_ID: team_iQE4xRivacvtTo9IoqBeEdBs
-      VERCEL_PROJECT_ID: prj_HlqoGYbQIRzKSpUFAxUb6p0WK72L
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Checkout Code
@@ -317,8 +317,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     timeout-minutes: 10
     env:
-      VERCEL_ORG_ID: team_iQE4xRivacvtTo9IoqBeEdBs
-      VERCEL_PROJECT_ID: prj_HlqoGYbQIRzKSpUFAxUb6p0WK72L
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
       - name: Checkout Code
@@ -366,7 +366,7 @@ jobs:
           echo "Cleaning up Vercel preview deployments for branch: $BRANCH"
 
           UIDS=$(curl -s \
-            "https://api.vercel.com/v6/deployments?teamId=team_iQE4xRivacvtTo9IoqBeEdBs&projectId=prj_HlqoGYbQIRzKSpUFAxUb6p0WK72L&target=preview&meta-githubCommitRef=${BRANCH}&limit=20" \
+            "https://api.vercel.com/v6/deployments?teamId=${{ vars.VERCEL_ORG_ID }}&projectId=${{ vars.VERCEL_PROJECT_ID }}&target=preview&meta-githubCommitRef=${BRANCH}&limit=20" \
             -H "Authorization: Bearer $VERCEL_TOKEN" \
             | jq -r '.deployments[].uid // empty')
 
@@ -378,7 +378,7 @@ jobs:
           for uid in $UIDS; do
             echo "Deleting: $uid"
             curl -s -X DELETE \
-              "https://api.vercel.com/v13/deployments/${uid}?teamId=team_iQE4xRivacvtTo9IoqBeEdBs" \
+              "https://api.vercel.com/v13/deployments/${uid}?teamId=${{ vars.VERCEL_ORG_ID }}" \
               -H "Authorization: Bearer $VERCEL_TOKEN" | jq -r '.uid + " deleted"'
           done
 
