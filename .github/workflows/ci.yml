@@ -122,7 +122,6 @@ jobs:
 
       - name: npm Audit
         run: npm audit --audit-level=high
-        continue-on-error: true # informational until existing dep vulns are resolved
 
   # ── BUILD, SCAN & SIGN IMAGES ───────────────────────────────────────────────
   build-and-secure:
