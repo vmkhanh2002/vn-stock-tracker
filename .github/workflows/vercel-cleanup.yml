@@ -1,0 +1,66 @@
+name: Cleanup Vercel Deployments
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    name: Delete Vercel Previews
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Fetch and Delete Branch Deployments
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "VERCEL_TOKEN secret is not set. Skipping cleanup."
+            exit 0
+          fi
+
+          if [ ! -f .vercel/project.json ]; then
+            echo "Vercel project configuration not found. Skipping cleanup."
+            exit 0
+          fi
+
+          PROJECT_ID=$(jq -r '.projectId' .vercel/project.json)
+          ORG_ID=$(jq -r '.orgId' .vercel/project.json)
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+
+          if [ -z "$PROJECT_ID" ] || [ -z "$BRANCH_NAME" ]; then
+            echo "Project ID or Branch Name is missing. Skipping cleanup."
+            exit 0
+          fi
+
+          TEAM_PARAM=""
+          if [[ "$ORG_ID" == team_* ]]; then
+            TEAM_PARAM="&teamId=$ORG_ID"
+          fi
+
+          echo "Fetching deployments for project $PROJECT_ID on branch $BRANCH_NAME"
+
+          RESPONSE=$(curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v6/deployments?projectId=${PROJECT_ID}${TEAM_PARAM}&branch=${BRANCH_NAME}")
+
+          DEPLOYMENT_IDS=$(echo "$RESPONSE" | jq -r '.deployments[].uid // empty')
+
+          if [ -z "$DEPLOYMENT_IDS" ]; then
+            echo "No deployments found for branch $BRANCH_NAME."
+            exit 0
+          fi
+
+          for ID in $DEPLOYMENT_IDS; do
+            echo "Deleting Vercel deployment: $ID"
+            DELETE_URL="https://api.vercel.com/v13/deployments/$ID"
+            if [[ "$ORG_ID" == team_* ]]; then
+              DELETE_URL="https://api.vercel.com/v13/deployments/$ID?teamId=$ORG_ID"
+            fi
+            curl -s -X DELETE -H "Authorization: Bearer $VERCEL_TOKEN" "$DELETE_URL"
+          done
+          echo "Cleanup complete."
