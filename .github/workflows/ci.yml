@@ -41,14 +41,9 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
 
       - name: Install Semgrep
         run: pip install semgrep
@@ -65,7 +60,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -86,7 +81,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install Node Deps
@@ -112,14 +107,14 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.5.0
+        uses: sigstore/cosign-installer@v4.1.2
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -127,7 +122,7 @@ jobs:
 
       - name: Extract Metadata (Web)
         id: meta-web
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}
           tags: |
@@ -136,7 +131,7 @@ jobs:
 
       - name: Extract Metadata (API)
         id: meta-api
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}
           tags: |
@@ -145,7 +140,7 @@ jobs:
 
       # ── BUILD WEB IMAGE ─────────────────────────────────────────────────────
       - name: Build Web Image (Next.js)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
@@ -157,7 +152,7 @@ jobs:
 
       # ── BUILD API IMAGE ─────────────────────────────────────────────────────
       - name: Build API Image (FastAPI)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.python
@@ -203,7 +198,7 @@ jobs:
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:latest
-          output-format: spdx-json
+          format: spdx-json
           artifact-name: web-sbom.spdx.json
 
       - name: Generate SBOM (API)
@@ -211,7 +206,7 @@ jobs:
         uses: anchore/sbom-action@v0
         with:
           image: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:latest
-          output-format: spdx-json
+          format: spdx-json
           artifact-name: api-sbom.spdx.json
 
       # ── SIGN IMAGES (COSIGN) ────────────────────────────────────────────────
@@ -237,7 +232,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
@@ -258,7 +253,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## ✅ DevSecOps CI Passed — Preview Deployment Ready\n\n🔗 **Preview URL:** ${url}\n\n_Deployed after: secrets scan, SAST scan, lint — all passed._`
+              body: `## DevSecOps CI Passed — Preview Deployment Ready\n\n**Preview URL:** ${url}\n\n_Deployed after: secrets scan, SAST scan, lint — all passed._`
             });
 
   # ── DEPLOY TO VERCEL PRODUCTION (MAIN PUSH ONLY) ────────────────────────────
@@ -278,7 +273,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest

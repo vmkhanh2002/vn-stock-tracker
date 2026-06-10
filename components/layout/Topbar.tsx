@@ -3,6 +3,7 @@ import { signOut, useSession } from "next-auth/react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { LogOut, User, ShieldCheck, Languages } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { useLanguage } from "@/components/providers/LanguageProvider"
 
 export function Topbar() {
@@ -37,7 +38,7 @@ export function Topbar() {
           <DropdownMenu.Trigger asChild>
             <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
               {session?.user?.image ? (
-                <img src={session.user.image} alt="" className="h-7 w-7 rounded-full" />
+                <Image src={session.user.image} alt="" width={28} height={28} className="rounded-full" />
               ) : (
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
                   {session?.user?.name?.[0] ?? session?.user?.email?.[0] ?? "?"}
