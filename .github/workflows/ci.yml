@@ -49,7 +49,7 @@ jobs:
         run: pip install semgrep
 
       - name: Semgrep Scan
-        run: semgrep ci --config=auto --error
+        run: semgrep scan --config=auto --error
 
   # ── IAC & CONFIGURATION SCANNING ───────────────────────────────────────────
   config-scan:
@@ -59,12 +59,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Run Checkov
-        uses: bridgecrewio/checkov-action@master
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          framework: dockerfile,docker_compose
-          output_format: cli
-          soft_fail: true # Informative scan, does not block PR for minor warnings
+          python-version: '3.11'
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Run Checkov
+        run: checkov -d . --framework dockerfile,docker_compose --soft-fail --output cli
 
   # ── LINT & CODE QUALITY ─────────────────────────────────────────────────────
   lint-app:

@@ -19,6 +19,7 @@ jobs:
       REGISTRY: ghcr.io
       WEB_IMAGE_NAME: ${{ github.repository_owner }}/vn-stock-web
       API_IMAGE_NAME: ${{ github.repository_owner }}/vn-stock-api
+      REPOSITORY_OWNER: ${{ github.repository_owner }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -32,7 +33,7 @@ jobs:
           SHA_SHORT=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
           cosign verify \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-identity-regexp 'https://github.com/${{ github.repository_owner }}/.*' \
+            --certificate-identity-regexp "https://github.com/${REPOSITORY_OWNER}/.*" \
             ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:sha-${SHA_SHORT}
 
       - name: Verify API Image Signature
@@ -40,7 +41,7 @@ jobs:
           SHA_SHORT=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
           cosign verify \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-identity-regexp 'https://github.com/${{ github.repository_owner }}/.*' \
+            --certificate-identity-regexp "https://github.com/${REPOSITORY_OWNER}/.*" \
             ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:sha-${SHA_SHORT}
 
       # ── DRY-RUN DEPLOY / DEPLOYMENT SETUP ─────────────────────────────────

@@ -22,6 +22,8 @@ jobs:
       REGISTRY: ghcr.io
       WEB_IMAGE_NAME: ${{ github.repository_owner }}/vn-stock-web
       API_IMAGE_NAME: ${{ github.repository_owner }}/vn-stock-api
+      DEPLOYMENT_TAG: ${{ github.event.inputs.deployment_tag }}
+      REPOSITORY_OWNER: ${{ github.repository_owner }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -34,22 +36,22 @@ jobs:
         run: |
           cosign verify \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-identity-regexp 'https://github.com/${{ github.repository_owner }}/.*' \
-            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:${{ github.event.inputs.deployment_tag }}
+            --certificate-identity-regexp "https://github.com/${REPOSITORY_OWNER}/.*" \
+            ${{ env.REGISTRY }}/${{ env.WEB_IMAGE_NAME }}:${DEPLOYMENT_TAG}
 
       - name: Verify API Image Signature
         run: |
           cosign verify \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-identity-regexp 'https://github.com/${{ github.repository_owner }}/.*' \
-            ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ github.event.inputs.deployment_tag }}
+            --certificate-identity-regexp "https://github.com/${REPOSITORY_OWNER}/.*" \
+            ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${DEPLOYMENT_TAG}
 
       # ── DEPLOYMENT ──────────────────────────────────────────────────────────
       - name: Deploy to Production (K8s/Helm)
         run: |
-          echo "Deploying ${{ github.event.inputs.deployment_tag }} to Production Cluster..."
+          echo "Deploying ${DEPLOYMENT_TAG} to Production Cluster..."
           echo "helm upgrade --install vnstock-app-prod ./deploy/helm/devsecops-app \
-            --set web.image.tag=${{ github.event.inputs.deployment_tag }} \
-            --set api.image.tag=${{ github.event.inputs.deployment_tag }} \
+            --set web.image.tag=${DEPLOYMENT_TAG} \
+            --set api.image.tag=${DEPLOYMENT_TAG} \
             --namespace production"
           echo "Production deployment initiated."
